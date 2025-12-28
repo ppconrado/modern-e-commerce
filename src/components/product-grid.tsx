@@ -8,8 +8,6 @@ import { ProductCard } from './product-card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 
-const categories = ['All', 'Electronics', 'Accessories'];
-
 export function ProductGrid() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -22,6 +20,15 @@ export function ProductGrid() {
     queryKey: ['products'],
     queryFn: fetchProducts,
   });
+
+  // Get unique categories dynamically from products
+  const categories = useMemo(() => {
+    if (!products) return ['All'];
+    const uniqueCategories = Array.from(
+      new Set(products.map((p) => p.category))
+    ).sort();
+    return ['All', ...uniqueCategories];
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
