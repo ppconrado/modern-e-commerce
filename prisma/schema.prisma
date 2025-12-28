@@ -1,70 +1,89 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 model Order {
-  id            String      @id
-  userId        String
-  status        OrderStatus @default(PENDING)
-  total         Float
-  address       String
-  city          String
-  zipCode       String
-  paymentMethod String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime
-  User          User        @relation(fields: [userId], references: [id])
-  OrderItem     OrderItem[]
+    id            String      @id
+    userId        String
+    status        OrderStatus @default(PENDING)
+    total         Float
+    address       String
+    city          String
+    zipCode       String
+    paymentMethod String
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime
+    User          User        @relation(fields: [userId], references: [id])
+    OrderItem     OrderItem[]
 
-  @@index([status])
-  @@index([userId])
+    @@index([status])
+    @@index([userId])
 }
 
 model OrderItem {
-  id        String  @id
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-  Order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  Product   Product @relation(fields: [productId], references: [id])
+    id        String  @id
+    orderId   String
+    productId String
+    quantity  Int
+    price     Float
+    Order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    Product   Product @relation(fields: [productId], references: [id])
 
-  @@index([orderId])
-  @@index([productId])
+    @@index([orderId])
+    @@index([productId])
 }
 
 model Product {
-  id          String      @id
-  name        String
-  description String
-  price       Float
-  image       String
-  category    String
-  stock       Int
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime
-  OrderItem   OrderItem[]
+    id          String      @id
+    name        String
+    description String
+    price       Float
+    image       String
+    category    String
+    stock       Int
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime
+    OrderItem   OrderItem[]
 
-  @@index([category])
+    @@index([category])
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
-  fullName  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  Order     Order[]
+    id        String   @id
+    email     String   @unique
+    fullName  String
+    password  String   @default("")
+    role      UserRole @default(CUSTOMER)
+    createdAt DateTime @default(now())
+    updatedAt DateTime
+    Order     Order[]
+}
+
+model AdminInvite {
+    id        String    @id
+    email     String    @unique
+    token     String    @unique
+    role      UserRole  @default(ADMIN)
+    invitedBy String
+    expiresAt DateTime
+    usedAt    DateTime?
+    createdAt DateTime  @default(now())
+}
+
+enum UserRole {
+    CUSTOMER
+    ADMIN
+    SUPER_ADMIN
 }
 
 enum OrderStatus {
-  PENDING
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+    PENDING
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
 }

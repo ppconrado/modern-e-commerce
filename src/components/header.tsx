@@ -1,12 +1,14 @@
 'use client';
 
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
 import { Button } from './ui/button';
+import { useSession, signOut } from 'next-auth/react';
 
 export function Header() {
   const totalItems = useCartStore((state) => state.getTotalItems());
+  const { data: session } = useSession();
 
   return (
     <header className="border-b">
@@ -19,6 +21,61 @@ export function Header() {
           <Link href="/" className="text-sm font-medium hover:underline">
             Products
           </Link>
+
+          {(session?.user?.role === 'ADMIN' ||
+            session?.user?.role === 'SUPER_ADMIN') && (
+            <Link href="/admin" className="text-sm font-medium hover:underline">
+              Admin
+            </Link>
+          )}
+
+          {session?.user?.role === 'SUPER_ADMIN' && (
+            <Link
+              href="/admin/users"
+              className="text-sm font-medium hover:underline"
+            >
+              Users
+            </Link>
+          )}
+
+          {session ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                <User className="inline h-4 w-4 mr-1" />
+                {session.user?.name}
+                {session.user?.role === 'SUPER_ADMIN' && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full">
+                    SUPER ADMIN
+                  </span>
+                )}
+                {session.user?.role === 'ADMIN' && (
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    ADMIN
+                  </span>
+                )}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/' })}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  Sign in
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm">Sign up</Button>
+              </Link>
+            </div>
+          )}
+
           <Link href="/cart" className="relative">
             <Button variant="outline" size="icon">
               <ShoppingCart className="h-5 w-5" />
