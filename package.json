@@ -10,13 +10,17 @@
         "test": "playwright test",
         "db:generate": "prisma generate",
         "db:push": "prisma db push",
+        "db:migrate": "prisma migrate dev",
         "db:seed": "tsx prisma/seed.ts",
         "db:studio": "prisma studio",
-        "docker:build": "docker-compose build",
-        "docker:up": "docker-compose up -d",
-        "docker:down": "docker-compose down",
-        "docker:logs": "docker-compose logs -f",
-        "docker:restart": "docker-compose restart app"
+        "dev:setup": "npm run db:generate && npm run db:migrate && npm run db:seed",
+        "docker:build": "docker compose build",
+        "docker:up": "docker compose up -d",
+        "docker:down": "docker compose down",
+        "docker:logs": "docker compose logs -f app",
+        "docker:restart": "docker compose restart app",
+        "docker:rebuild": "docker compose down && docker compose up --build -d",
+        "docker:clean": "docker compose down -v"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.9.1",
