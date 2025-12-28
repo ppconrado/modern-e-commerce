@@ -1,13 +1,23 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const products = [
   {
     name: 'Wireless Headphones',
-    description: 'Premium noise-cancelling wireless headphones with 30-hour battery life.',
+    description:
+      'Premium noise-cancelling wireless headphones with 30-hour battery life.',
     price: 299.99,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop',
     category: 'Electronics',
     stock: 15,
   },
@@ -15,7 +25,8 @@ const products = [
     name: 'Smart Watch',
     description: 'Fitness tracking smartwatch with heart rate monitor and GPS.',
     price: 399.99,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop',
     category: 'Electronics',
     stock: 23,
   },
@@ -23,7 +34,8 @@ const products = [
     name: 'Laptop Backpack',
     description: 'Durable water-resistant backpack with laptop compartment.',
     price: 79.99,
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&h=500&fit=crop',
     category: 'Accessories',
     stock: 42,
   },
@@ -31,7 +43,8 @@ const products = [
     name: 'Mechanical Keyboard',
     description: 'RGB backlit mechanical keyboard with customizable switches.',
     price: 149.99,
-    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&h=500&fit=crop',
     category: 'Electronics',
     stock: 18,
   },
@@ -39,7 +52,8 @@ const products = [
     name: 'Wireless Mouse',
     description: 'Ergonomic wireless mouse with precision tracking.',
     price: 49.99,
-    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&h=500&fit=crop',
     category: 'Electronics',
     stock: 56,
   },
@@ -47,7 +61,8 @@ const products = [
     name: 'Phone Stand',
     description: 'Adjustable aluminum phone stand for desk or bedside.',
     price: 24.99,
-    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&h=500&fit=crop',
     category: 'Accessories',
     stock: 78,
   },
@@ -55,7 +70,8 @@ const products = [
     name: 'USB-C Hub',
     description: '7-in-1 USB-C hub with HDMI, USB 3.0, SD card reader.',
     price: 59.99,
-    image: 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=500&h=500&fit=crop',
     category: 'Electronics',
     stock: 34,
   },
@@ -63,7 +79,8 @@ const products = [
     name: 'Cable Organizer',
     description: 'Desk cable management system with multiple clips.',
     price: 19.99,
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop',
+    image:
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop',
     category: 'Accessories',
     stock: 95,
   },
