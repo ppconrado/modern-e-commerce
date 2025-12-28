@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
@@ -23,6 +24,14 @@ export default function CartPage() {
   const [orderComplete, setOrderComplete] = useState(false);
 
   const totalPrice = getTotalPrice();
+
+  const handleRemoveItem = (productId: string, productName: string) => {
+    removeItem(productId);
+    toast({
+      title: 'Removed from cart',
+      description: `${productName} has been removed from your cart.`,
+    });
+  };
 
   if (orderComplete) {
     return (
@@ -106,7 +115,7 @@ export default function CartPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeItem(product.id)}
+                      onClick={() => handleRemoveItem(product.id, product.name)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>

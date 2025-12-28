@@ -1,4 +1,4 @@
-# E-commerce MVP
+# E-commerce MVP - Enhanced
 
 A modern, full-featured e-commerce platform built with cutting-edge technologies from the 2026 Web Development landscape.
 
@@ -9,13 +9,13 @@ This project implements the technologies recommended in the **Web Development in
 ### Core Framework
 
 - **Next.js 15** - React framework with App Router for server-side rendering and SEO
-- **React 19** - Latest version with improved performance
+- **React 19** - Latest version with improved performance and Suspense
 - **TypeScript** - Type-safe development
 
 ### Styling & UI
 
 - **Tailwind CSS** - Utility-first CSS framework
-- **Radix UI** - Unstyled, accessible component primitives
+- **Radix UI** - Unstyled, accessible component primitives (Dialog, Toast)
 - **Lucide React** - Beautiful icon library
 
 ### State Management
@@ -28,6 +28,11 @@ This project implements the technologies recommended in the **Web Development in
 - **React Hook Form** - Performant form handling
 - **Zod** - TypeScript-first schema validation
 
+### Advanced Features
+
+- **React Suspense** - Better loading states and streaming UX
+- **Toast Notifications** - Real-time user feedback with Radix Toast
+
 ### Additional Tools
 
 - **class-variance-authority** - Component variant styling
@@ -36,12 +41,17 @@ This project implements the technologies recommended in the **Web Development in
 ## 📦 Features
 
 - ✅ Product catalog with grid view
+- ✅ **Product search and filtering by category**
+- ✅ **Individual product detail pages**
 - ✅ Shopping cart with persistent storage (Zustand + localStorage)
 - ✅ Add/remove products with quantity controls
+- ✅ **Toast notifications for cart actions**
 - ✅ Real-time cart updates and totals
 - ✅ Checkout form with validation (React Hook Form + Zod)
+- ✅ **React Suspense for improved loading UX**
 - ✅ Responsive design for mobile and desktop
 - ✅ Loading states and error handling
+- ✅ Order success flow
 - ✅ Type-safe development with TypeScript
 - ✅ Server-side rendering with Next.js
 - ✅ Accessible UI components with Radix UI
@@ -71,6 +81,9 @@ e-commerce/
 │   ├── app/                    # Next.js App Router
 │   │   ├── layout.tsx          # Root layout with providers
 │   │   ├── page.tsx            # Home page (product grid)
+│   │   ├── products/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx    # Product detail page
 │   │   ├── cart/               # Cart page
 │   │   └── globals.css         # Global styles
 │   ├── components/             # React components
@@ -78,12 +91,16 @@ e-commerce/
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── dialog.tsx
-│   │   │   └── input.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── toast.tsx       # Toast component
+│   │   │   └── toaster.tsx     # Toast container
 │   │   ├── header.tsx          # Navigation header
 │   │   ├── product-card.tsx    # Product display card
-│   │   ├── product-grid.tsx    # Product grid with TanStack Query
+│   │   ├── product-grid.tsx    # Product grid with search/filter
 │   │   ├── checkout-form.tsx   # Checkout form with validation
 │   │   └── providers.tsx       # Query client provider
+│   ├── hooks/                  # Custom React hooks
+│   │   └── use-toast.ts        # Toast notification hook
 │   ├── store/                  # Zustand stores
 │   │   └── cart.ts             # Cart state management
 │   ├── lib/                    # Utilities and API
@@ -98,6 +115,40 @@ e-commerce/
 ```
 
 ## 🎯 Key Implementation Details
+
+### React Suspense (NEW!)
+
+Streaming UI with better loading states:
+
+- Skeleton screens while data loads
+- Non-blocking UI updates
+- Improved perceived performance
+
+### Toast Notifications (NEW!)
+
+Real-time user feedback using Radix Toast:
+
+- Add to cart confirmations
+- Remove from cart notifications
+- Clean, accessible notifications
+
+### Product Search & Filtering (NEW!)
+
+Enhanced product discovery:
+
+- Real-time search across name and description
+- Category filtering (All, Electronics, Accessories)
+- Optimized with useMemo for performance
+
+### Product Detail Pages (NEW!)
+
+Individual product pages with:
+
+- Full product information
+- Large product images
+- Add to cart functionality
+- Stock availability
+- Breadcrumb navigation
 
 ### State Management with Zustand
 

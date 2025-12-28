@@ -1,4 +1,18 @@
+import { Suspense } from 'react';
 import { ProductGrid } from '@/components/product-grid';
+
+function ProductGridSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="h-10 bg-muted animate-pulse rounded-lg w-full max-w-md" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-96 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -9,7 +23,9 @@ export default function HomePage() {
           Discover our curated collection of premium products
         </p>
       </div>
-      <ProductGrid />
+      <Suspense fallback={<ProductGridSkeleton />}>
+        <ProductGrid />
+      </Suspense>
     </div>
   );
 }

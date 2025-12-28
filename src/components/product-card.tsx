@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import type { Product } from '@/types';
@@ -13,6 +14,7 @@ import {
   CardTitle,
 } from './ui/card';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   product: Product;
@@ -24,6 +26,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = () => {
     addItem(product);
+    toast({
+      title: 'Added to cart',
+      description: `${product.name} has been added to your cart.`,
+    });
   };
 
   const handleIncrement = () => {
@@ -40,23 +46,29 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <CardHeader className="p-0">
-        <div className="relative h-48 w-full">
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            className="object-cover"
-          />
-        </div>
-      </CardHeader>
+      <Link href={`/products/${product.id}`}>
+        <CardHeader className="p-0 cursor-pointer">
+          <div className="relative h-48 w-full">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </CardHeader>
+      </Link>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <CardTitle className="text-lg">{product.name}</CardTitle>
-          <span className="text-lg font-bold">
-            {formatCurrency(product.price)}
-          </span>
-        </div>
+        <Link href={`/products/${product.id}`}>
+          <div className="flex items-start justify-between mb-2 cursor-pointer">
+            <CardTitle className="text-lg hover:text-primary transition-colors">
+              {product.name}
+            </CardTitle>
+            <span className="text-lg font-bold">
+              {formatCurrency(product.price)}
+            </span>
+          </div>
+        </Link>
         <p className="text-sm text-muted-foreground line-clamp-2">
           {product.description}
         </p>
