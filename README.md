@@ -1,6 +1,6 @@
-# E-commerce MVP - Enhanced
+# E-commerce MVP - Full-Stack Edition
 
-A modern, full-featured e-commerce platform built with cutting-edge technologies from the 2026 Web Development landscape.
+A modern, production-ready e-commerce platform built with cutting-edge technologies from the 2026 Web Development landscape. **Now with PostgreSQL backend!**
 
 ## 🚀 Technologies Used
 
@@ -8,9 +8,15 @@ This project implements the technologies recommended in the **Web Development in
 
 ### Core Framework
 
-- **Next.js 15** - React framework with App Router for server-side rendering and SEO
+- **Next.js 15** - Full-stack framework with App Router and API routes
 - **React 19** - Latest version with improved performance and Suspense
-- **TypeScript** - Type-safe development
+- **TypeScript** - End-to-end type safety
+
+### Backend & Database
+
+- **PostgreSQL** - Production-grade relational database
+- **Prisma ORM** - Type-safe database access with migrations
+- **Next.js API Routes** - RESTful API endpoints
 
 ### Styling & UI
 
@@ -26,20 +32,17 @@ This project implements the technologies recommended in the **Web Development in
 ### Forms & Validation
 
 - **React Hook Form** - Performant form handling
-- **Zod** - TypeScript-first schema validation
+- **Zod** - TypeScript-first schema validation (frontend & backend)
 
 ### Advanced Features
 
 - **React Suspense** - Better loading states and streaming UX
 - **Toast Notifications** - Real-time user feedback with Radix Toast
-
-### Additional Tools
-
-- **class-variance-authority** - Component variant styling
-- **tailwind-merge** - Merge Tailwind classes without conflicts
+- **Prisma Studio** - Database GUI for development
 
 ## 📦 Features
 
+### Frontend
 - ✅ Product catalog with grid view
 - ✅ **Product search and filtering by category**
 - ✅ **Individual product detail pages**
@@ -48,17 +51,81 @@ This project implements the technologies recommended in the **Web Development in
 - ✅ **Toast notifications for cart actions**
 - ✅ Real-time cart updates and totals
 - ✅ Checkout form with validation (React Hook Form + Zod)
-- ✅ **React Suspense for improved loading UX**
-- ✅ Responsive design for mobile and desktop
-- ✅ Loading states and error handling
-- ✅ Order success flow
-- ✅ Type-safe development with TypeScript
-- ✅ Server-side rendering with Next.js
-- ✅ Accessible UI components with Radix UI
+
+### Backend
+- ✅ **RESTful API with Next.js**
+- ✅ **PostgreSQL database with Prisma**
+- ✅ **User management**
+- ✅ **Order processing and tracking**
+- ✅ **Automatic stock updates**
+- ✅ **Data validation and error handling**
+- ✅ **Database seeding with sample data**
 
 ## 🛠️ Installation
 
-1. **Install dependencies:**
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Set Up Database
+
+**Option A: Local PostgreSQL**
+1. Install PostgreSQL from https://www.postgresql.org/download/
+2. Create a database:
+   ```bash
+   createdb ecommerce_db
+   ```
+3. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+4. Update `DATABASE_URL` in `.env` with your credentials
+
+**Option B: Use Prisma Postgres (Recommended - Easiest!)**
+```bash
+npx prisma-postgres-create-database
+```
+
+### 3. Run Migrations & Seed
+```bash
+npm run db:push
+npm run db:seed
+```
+
+### 4. Start Development Server
+```bash
+npm run dev
+```
+
+### 5. Open Browser
+Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📊 Database Management
+
+### Prisma Studio (Database GUI)
+```bash
+npm run db:studio
+```
+Opens at http://localhost:5555
+
+### Database Scripts
+```bash
+npm run db:generate  # Generate Prisma Client
+npm run db:push      # Push schema changes to DB  
+npm run db:seed      # Seed with sample data
+npm run db:studio    # Open Prisma Studio
+```
+
+## 🗄️ API Endpoints
+
+- `GET /api/products` - Fetch all products
+- `GET /api/products/[id]` - Get product by ID
+- `GET /api/products/category/[category]` - Filter by category
+- `POST /api/orders` - Create new order
+- `GET /api/orders` - Get all orders (admin)
+
+## � Project Structure
 
    ```bash
    npm install
@@ -77,8 +144,14 @@ This project implements the technologies recommended in the **Web Development in
 
 ```
 e-commerce/
+├── prisma/
+│   ├── schema.prisma           # Database schema
+│   └── seed.ts                 # Database seed script
 ├── src/
 │   ├── app/                    # Next.js App Router
+│   │   ├── api/                # API Routes
+│   │   │   ├── products/       # Product endpoints
+│   │   │   └── orders/         # Order endpoints
 │   │   ├── layout.tsx          # Root layout with providers
 │   │   ├── page.tsx            # Home page (product grid)
 │   │   ├── products/
@@ -104,7 +177,8 @@ e-commerce/
 │   ├── store/                  # Zustand stores
 │   │   └── cart.ts             # Cart state management
 │   ├── lib/                    # Utilities and API
-│   │   ├── api.ts              # Mock API functions
+│   │   ├── api.ts              # API client functions
+│   │   ├── prisma.ts           # Prisma client
 │   │   └── utils.ts            # Helper functions
 │   └── types/                  # TypeScript types
 │       └── index.ts            # Shared type definitions

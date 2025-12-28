@@ -1,0 +1,84 @@
+// This is your Prisma schema file
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Product {
+    id          String   @id @default(cuid())
+    name        String
+    description String
+    price       Float
+    image       String
+    category    String
+    stock       Int
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    orderItems OrderItem[]
+
+    @@index([category])
+}
+
+model User {
+    id        String   @id @default(cuid())
+    email     String   @unique
+    fullName  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    orders Order[]
+}
+
+model Order {
+    id     String @id @default(cuid())
+    userId String
+    user   User   @relation(fields: [userId], references: [id])
+
+    status OrderStatus @default(PENDING)
+    total  Float
+
+    // Shipping info
+    address String
+    city    String
+    zipCode String
+
+    // Payment info (stored securely - never store full card details!)
+    paymentMethod String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    items OrderItem[]
+
+    @@index([userId])
+    @@index([status])
+}
+
+model OrderItem {
+    id      String @id @default(cuid())
+    orderId String
+    order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id])
+
+    quantity Int
+    price    Float // Store price at time of order
+
+    @@index([orderId])
+    @@index([productId])
+}
+
+enum OrderStatus {
+    PENDING
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+}

@@ -4,9 +4,11 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCartStore } from '@/store/cart';
+import { createOrder } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/hooks/use-toast';
 import type { CheckoutFormData } from '@/types';
 
 const checkoutSchema = z.object({
@@ -25,7 +27,7 @@ interface CheckoutFormProps {
 }
 
 export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
-  const clearCart = useCartStore((state) => state.clearCart);
+  const { items, clearCart, getTotalPrice } = useCartStore();
   const {
     register,
     handleSubmit,
@@ -35,11 +37,36 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   });
 
   const onSubmit = async (data: CheckoutFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log('Order submitted:', data);
-    clearCart();
-    onSuccess();
+    try {
+      const orderData = {
+        email: data.email,
+        fullName: data.fullName,
+        address: data.address,
+        city: data.city,
+        zipCode: data.zipCode,
+        items: items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+        total: getTotalPrice() * 1.1, // Including tax
+      };
+
+      await createOrder(orderData);
+      
+      toast({
+        title: 'Order successful!',
+        description: 'Your order has been placed successfully.',
+      });
+      
+      clearCart();
+      onSuccess();
+    } catch (error) {
+      toast({
+        title: 'Order failed',
+        description: error instanceof Error ? error.message : 'Failed to place order',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
