@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -103,11 +104,15 @@ async function main() {
     console.log(`Created product: ${created.name}`);
   }
 
-  // Create sample users
+  // Create sample users with hashed passwords
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   const user1 = await prisma.user.create({
     data: {
       email: 'john@example.com',
       fullName: 'John Doe',
+      password: hashedPassword,
+      role: 'ADMIN',
     },
   });
 
@@ -115,6 +120,8 @@ async function main() {
     data: {
       email: 'jane@example.com',
       fullName: 'Jane Smith',
+      password: hashedPassword,
+      role: 'CUSTOMER',
     },
   });
 

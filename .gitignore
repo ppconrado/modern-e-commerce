@@ -23,3 +23,5 @@ scripts/check-users.ts
 scripts/fix-passwords.ts
 scripts/generate-hash.ts
 scripts/update-passwords.ts
+
+playwright/.auth/

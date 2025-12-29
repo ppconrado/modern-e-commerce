@@ -22,17 +22,18 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/',
       });
 
       if (result?.error) {
         setError('Invalid email or password');
-      } else {
-        router.push('/');
-        router.refresh();
+        setLoading(false);
+      } else if (result?.ok) {
+        // Use window.location for reliable redirect in tests
+        window.location.href = result.url || '/';
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
