@@ -1,0 +1,2 @@
+# Ignore debug-only Playwright specs
+/tests/debug/
