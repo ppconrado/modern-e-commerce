@@ -15,6 +15,7 @@ import {
 } from './ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { StarRating } from './star-rating';
 
 interface ProductCardProps {
   product: Product;
@@ -72,9 +73,22 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="text-sm text-muted-foreground line-clamp-2">
           {product.description}
         </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-        </p>
+        <div className="flex items-center justify-between mt-2">
+          <StarRating
+            rating={product.averageRating || 0}
+            size={16}
+            showNumber={false}
+          />
+          <p className="text-xs text-muted-foreground">
+            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+          </p>
+        </div>
+        {(product.reviewCount ?? 0) > 0 && (
+          <p className="text-xs text-gray-500 mt-1">
+            ({product.reviewCount}{' '}
+            {product.reviewCount === 1 ? 'review' : 'reviews'})
+          </p>
+        )}
       </CardContent>
       <CardFooter className="p-4 pt-0">
         {cartItem ? (

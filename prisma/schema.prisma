@@ -42,18 +42,38 @@ model OrderItem {
 }
 
 model Product {
-    id          String      @id @default(cuid())
-    name        String
-    description String
-    price       Float
-    image       String
-    category    String
-    stock       Int
-    createdAt   DateTime    @default(now())
-    updatedAt   DateTime    @updatedAt
-    OrderItem   OrderItem[]
+    id            String      @id @default(cuid())
+    name          String
+    description   String
+    price         Float
+    image         String
+    category      String
+    stock         Int
+    averageRating Float       @default(0)
+    reviewCount   Int         @default(0)
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+    OrderItem     OrderItem[]
+    Review        Review[]
 
     @@index([category])
+    @@index([averageRating])
+}
+
+model Review {
+    id        String   @id @default(cuid())
+    rating    Int // 1-5 stars
+    comment   String?
+    userId    String
+    productId String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, productId]) // One review per user per product
+    @@index([productId])
+    @@index([userId])
 }
 
 model User {
@@ -66,6 +86,7 @@ model User {
     updatedAt DateTime  @updatedAt
     Order     Order[]
     Address   Address[]
+    Review    Review[]
 }
 
 model Address {
@@ -73,7 +94,7 @@ model Address {
     userId    String
     user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
     type      AddressType
-    label     String      // "Home", "Work", "Other"
+    label     String // "Home", "Work", "Other"
     address   String
     city      String
     zipCode   String

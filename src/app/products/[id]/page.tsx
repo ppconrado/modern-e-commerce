@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { StarRating } from '@/components/star-rating';
+import { ProductReviews } from '@/components/product-reviews';
 
 function ProductDetailContent() {
   const params = useParams();
@@ -98,9 +100,20 @@ function ProductDetailContent() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-2xl font-bold text-primary">
-              {formatCurrency(product.price)}
-            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(product.price)}
+              </p>
+            </div>
+            {(product.reviewCount ?? 0) > 0 && (
+              <div className="flex items-center gap-2">
+                <StarRating rating={product.averageRating || 0} size={20} />
+                <span className="text-sm text-gray-600">
+                  ({product.reviewCount}{' '}
+                  {product.reviewCount === 1 ? 'review' : 'reviews'})
+                </span>
+              </div>
+            )}
           </div>
 
           <Card>
@@ -161,6 +174,11 @@ function ProductDetailContent() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-12">
+        <ProductReviews productId={productId} />
       </div>
     </div>
   );
