@@ -11,3 +11,12 @@ test-results/
 playwright-report/
 playwright/.cache/
 stripe.exe
+
+# Local uploads (using Cloudinary instead)
+public/uploads/
+
+# Debug scripts
+scripts/check-users.ts
+scripts/fix-passwords.ts
+scripts/generate-hash.ts
+scripts/update-passwords.ts
