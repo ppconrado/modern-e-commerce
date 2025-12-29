@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { nanoid } from 'nanoid';
 
 export async function POST(req: NextRequest) {
   try {
@@ -74,10 +73,8 @@ export async function POST(req: NextRequest) {
     }, 0);
 
     // Create order in database first
-    const orderId = nanoid();
     const order = await prisma.order.create({
       data: {
-        id: orderId,
         userId: session.user.id,
         total,
         address: shippingInfo.address,
@@ -86,12 +83,10 @@ export async function POST(req: NextRequest) {
         paymentMethod: 'stripe',
         status: 'PENDING',
         paymentStatus: 'PENDING',
-        updatedAt: new Date(),
         OrderItem: {
           create: items.map((item: any) => {
             const product = products.find((p) => p.id === item.id);
             return {
-              id: nanoid(),
               productId: item.id,
               quantity: item.quantity,
               price: product!.price,
@@ -109,19 +104,18 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.NEXTAUTH_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/cart`,
       customer_email: session.user.email || undefined,
-      client_reference_id: orderId,
+      client_reference_id: order.id,
       metadata: {
-        orderId,
+        orderId: order.id,
         userId: session.user.id,
       },
     });
 
     // Update order with Stripe session ID
     await prisma.order.update({
-      where: { id: orderId },
+      where: { id: order.id },
       data: {
         stripeSessionId: stripeSession.id,
-        updatedAt: new Date(),
       },
     });
 

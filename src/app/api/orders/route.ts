@@ -106,7 +106,7 @@ export async function POST(request: Request) {
         zipCode: validatedData.zipCode,
         paymentMethod: 'card',
         status: 'PENDING',
-        items: {
+        OrderItem: {
           create: validatedData.items.map((item) => {
             const product = products.find((p) => p.id === item.productId)!;
             return {
@@ -118,9 +118,9 @@ export async function POST(request: Request) {
         },
       },
       include: {
-        items: {
+        OrderItem: {
           include: {
-            product: true,
+            Product: true,
           },
         },
       },

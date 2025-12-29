@@ -7,7 +7,7 @@ datasource db {
 }
 
 model Order {
-    id                    String        @id
+    id                    String        @id @default(cuid())
     userId                String
     status                OrderStatus   @default(PENDING)
     paymentStatus         PaymentStatus @default(PENDING)
@@ -19,7 +19,7 @@ model Order {
     stripeSessionId       String?       @unique
     stripePaymentIntentId String?       @unique
     createdAt             DateTime      @default(now())
-    updatedAt             DateTime
+    updatedAt             DateTime      @updatedAt
     User                  User          @relation(fields: [userId], references: [id])
     OrderItem             OrderItem[]
 
@@ -29,7 +29,7 @@ model Order {
 }
 
 model OrderItem {
-    id        String  @id
+    id        String  @id @default(cuid())
     orderId   String
     productId String
     quantity  Int
@@ -42,7 +42,7 @@ model OrderItem {
 }
 
 model Product {
-    id          String      @id
+    id          String      @id @default(cuid())
     name        String
     description String
     price       Float
@@ -50,25 +50,25 @@ model Product {
     category    String
     stock       Int
     createdAt   DateTime    @default(now())
-    updatedAt   DateTime
+    updatedAt   DateTime    @updatedAt
     OrderItem   OrderItem[]
 
     @@index([category])
 }
 
 model User {
-    id        String   @id
+    id        String   @id @default(cuid())
     email     String   @unique
     fullName  String
     password  String   @default("")
     role      UserRole @default(CUSTOMER)
     createdAt DateTime @default(now())
-    updatedAt DateTime
+    updatedAt DateTime @updatedAt
     Order     Order[]
 }
 
 model AdminInvite {
-    id        String    @id
+    id        String    @id @default(cuid())
     email     String    @unique
     token     String    @unique
     role      UserRole  @default(ADMIN)
