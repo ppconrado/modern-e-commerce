@@ -55,7 +55,6 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
     e.preventDefault();
 
     if (!stripe || !elements) {
-      console.log('Stripe or elements not ready');
       return;
     }
 
@@ -71,10 +70,8 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
         },
       });
 
-      console.log('Payment result:', result);
-
       if (result.error) {
-        console.error('Stripe error:', result.error);
+        console.error('Stripe payment error:', result.error);
         toast({
           title: 'Payment failed',
           description: result.error.message,
