@@ -6,13 +6,6 @@ import { z } from 'zod';
 const profileUpdateSchema = z.object({
   fullName: z.string().min(2).optional(),
   email: z.string().email().optional(),
-  address: z.string().min(5).optional(),
-  city: z.string().min(2).optional(),
-  zipCode: z
-    .string()
-    .regex(/^\d{5}(-\d{4})?$/)
-    .optional(),
-  phone: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -29,10 +22,6 @@ export async function GET(req: NextRequest) {
         id: true,
         email: true,
         fullName: true,
-        address: true,
-        city: true,
-        zipCode: true,
-        phone: true,
         role: true,
         createdAt: true,
       },
@@ -70,10 +59,6 @@ export async function PATCH(req: NextRequest) {
         id: true,
         email: true,
         fullName: true,
-        address: true,
-        city: true,
-        zipCode: true,
-        phone: true,
         role: true,
         createdAt: true,
       },

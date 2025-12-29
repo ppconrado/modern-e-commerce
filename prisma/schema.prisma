@@ -57,18 +57,33 @@ model Product {
 }
 
 model User {
-    id        String   @id @default(cuid())
-    email     String   @unique
+    id        String    @id @default(cuid())
+    email     String    @unique
     fullName  String
-    password  String   @default("")
-    role      UserRole @default(CUSTOMER)
-    address   String?
-    city      String?
-    zipCode   String?
-    phone     String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    password  String    @default("")
+    role      UserRole  @default(CUSTOMER)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
     Order     Order[]
+    Address   Address[]
+}
+
+model Address {
+    id        String      @id @default(cuid())
+    userId    String
+    user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type      AddressType
+    label     String      // "Home", "Work", "Other"
+    address   String
+    city      String
+    zipCode   String
+    phone     String?
+    isDefault Boolean     @default(false)
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+
+    @@index([userId])
+    @@index([userId, isDefault])
 }
 
 model AdminInvite {
@@ -86,6 +101,12 @@ enum UserRole {
     CUSTOMER
     ADMIN
     SUPER_ADMIN
+}
+
+enum AddressType {
+    HOME
+    SHIPPING
+    BILLING
 }
 
 enum OrderStatus {

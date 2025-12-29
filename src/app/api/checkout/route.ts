@@ -72,17 +72,47 @@ export async function POST(req: NextRequest) {
       return sum + product!.price * item.quantity;
     }, 0);
 
-    // Update user's address if provided
-    if (shippingInfo.address || shippingInfo.city || shippingInfo.zipCode) {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-          address: shippingInfo.address,
-          city: shippingInfo.city,
-          zipCode: shippingInfo.zipCode,
-          phone: shippingInfo.phone,
+    // Save or update address if provided and not using existing addressId
+    let addressId = shippingInfo.addressId;
+    
+    if (!addressId && shippingInfo.address) {
+      // Create new address or update existing default shipping address
+      const existingShippingAddr = await prisma.address.findFirst({
+        where: {
+          userId: session.user.id,
+          type: 'SHIPPING',
+          isDefault: true,
         },
       });
+
+      if (existingShippingAddr) {
+        // Update existing default shipping address
+        await prisma.address.update({
+          where: { id: existingShippingAddr.id },
+          data: {
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            zipCode: shippingInfo.zipCode,
+            phone: shippingInfo.phone,
+          },
+        });
+        addressId = existingShippingAddr.id;
+      } else {
+        // Create new shipping address
+        const newAddress = await prisma.address.create({
+          data: {
+            userId: session.user.id,
+            type: 'SHIPPING',
+            label: 'Shipping Address',
+            address: shippingInfo.address,
+            city: shippingInfo.city,
+            zipCode: shippingInfo.zipCode,
+            phone: shippingInfo.phone,
+            isDefault: true,
+          },
+        });
+        addressId = newAddress.id;
+      }
     }
 
     // Create order in database first

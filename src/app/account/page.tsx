@@ -9,14 +9,28 @@ import { Input } from '@/components/ui/input';
 import {
   Loader2,
   User,
-  Mail,
-  Calendar,
   ShoppingBag,
-  Edit,
   Package,
+  MapPin,
+  Plus,
+  Edit,
+  Trash2,
+  Home,
+  CreditCard,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
+
+interface Address {
+  id: string;
+  type: 'HOME' | 'SHIPPING' | 'BILLING';
+  label: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  phone?: string;
+  isDefault: boolean;
+}
 
 interface Order {
   id: string;
@@ -34,16 +48,26 @@ export default function AccountPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<string | null>(null);
+  const [showNewAddress, setShowNewAddress] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
+  });
+
+  const [addressForm, setAddressForm] = useState({
+    type: 'HOME' as 'HOME' | 'SHIPPING' | 'BILLING',
+    label: '',
     address: '',
     city: '',
     zipCode: '',
     phone: '',
+    isDefault: false,
   });
 
   useEffect(() => {
@@ -55,6 +79,7 @@ export default function AccountPage() {
     if (status === 'authenticated') {
       fetchProfile();
       fetchOrders();
+      fetchAddresses();
     }
   }, [status, router]);
 
@@ -63,13 +88,9 @@ export default function AccountPage() {
       const response = await fetch('/api/user/profile');
       if (!response.ok) throw new Error('Failed to fetch profile');
       const data = await response.json();
-      setFormData({
+      setProfileData({
         fullName: data.user.fullName || '',
         email: data.user.email || '',
-        address: data.user.address || '',
-        city: data.user.city || '',
-        zipCode: data.user.zipCode || '',
-        phone: data.user.phone || '',
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -84,18 +105,29 @@ export default function AccountPage() {
       setOrders(data.orders);
     } catch (error) {
       console.error('Error fetching orders:', error);
+    }
+  };
+
+  const fetchAddresses = async () => {
+    try {
+      const response = await fetch('/api/user/addresses');
+      if (!response.ok) throw new Error('Failed to fetch addresses');
+      const data = await response.json();
+      setAddresses(data.addresses);
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     setSaving(true);
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(profileData),
       });
 
       if (!response.ok) throw new Error('Failed to update profile');
@@ -104,7 +136,7 @@ export default function AccountPage() {
         title: 'Profile updated',
         description: 'Your profile has been updated successfully.',
       });
-      setEditing(false);
+      setEditingProfile(false);
     } catch (error) {
       toast({
         title: 'Update failed',
@@ -113,6 +145,101 @@ export default function AccountPage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    setSaving(true);
+    try {
+      const url = editingAddress
+        ? `/api/user/addresses/${editingAddress}`
+        : '/api/user/addresses';
+      
+      const method = editingAddress ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addressForm),
+      });
+
+      if (!response.ok) throw new Error('Failed to save address');
+
+      toast({
+        title: editingAddress ? 'Address updated' : 'Address added',
+        description: `Your address has been ${editingAddress ? 'updated' : 'added'} successfully.`,
+      });
+      
+      setEditingAddress(null);
+      setShowNewAddress(false);
+      resetAddressForm();
+      fetchAddresses();
+    } catch (error) {
+      toast({
+        title: 'Save failed',
+        description: 'Failed to save address.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this address?')) return;
+
+    try {
+      const response = await fetch(`/api/user/addresses/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete address');
+
+      toast({
+        title: 'Address deleted',
+        description: 'Your address has been deleted successfully.',
+      });
+      fetchAddresses();
+    } catch (error) {
+      toast({
+        title: 'Delete failed',
+        description: 'Failed to delete address.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const startEditAddress = (address: Address) => {
+    setAddressForm({
+      type: address.type,
+      label: address.label,
+      address: address.address,
+      city: address.city,
+      zipCode: address.zipCode,
+      phone: address.phone || '',
+      isDefault: address.isDefault,
+    });
+    setEditingAddress(address.id);
+  };
+
+  const resetAddressForm = () => {
+    setAddressForm({
+      type: 'HOME',
+      label: '',
+      address: '',
+      city: '',
+      zipCode: '',
+      phone: '',
+      isDefault: false,
+    });
+  };
+
+  const getAddressIcon = (type: string) => {
+    switch (type) {
+      case 'HOME': return <Home className="h-4 w-4" />;
+      case 'BILLING': return <CreditCard className="h-4 w-4" />;
+      case 'SHIPPING': return <Package className="h-4 w-4" />;
+      default: return <MapPin className="h-4 w-4" />;
     }
   };
 
@@ -133,12 +260,12 @@ export default function AccountPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">My Account</h1>
         <p className="text-gray-600">
-          Manage your profile and view your orders
+          Manage your profile, addresses and view your orders
         </p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
-        {/* Stats Cards */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -184,16 +311,16 @@ export default function AccountPage() {
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
         {/* Profile Information */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Profile Information</CardTitle>
-            {!editing && (
+            {!editingProfile && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setEditing(true)}
+                onClick={() => setEditingProfile(true)}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
@@ -202,126 +329,33 @@ export default function AccountPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <User className="h-4 w-4" />
+              <label className="text-sm font-medium text-gray-600">
                 Full Name
               </label>
-              {editing ? (
+              {editingProfile ? (
                 <Input
-                  value={formData.fullName}
+                  value={profileData.fullName}
                   onChange={(e) =>
-                    setFormData({ ...formData, fullName: e.target.value })
+                    setProfileData({ ...profileData, fullName: e.target.value })
                   }
                   className="mt-1"
                 />
               ) : (
-                <p className="mt-1 text-lg">{formData.fullName}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </label>
-              {editing ? (
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="mt-1"
-                  disabled
-                />
-              ) : (
-                <p className="mt-1 text-lg">{formData.email}</p>
+                <p className="mt-1 text-lg">{profileData.fullName}</p>
               )}
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-600">
-                Address
+                Email
               </label>
-              {editing ? (
-                <Input
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="123 Main St"
-                  className="mt-1"
-                />
-              ) : (
-                <p className="mt-1 text-lg">
-                  {formData.address || 'Not provided'}
-                </p>
-              )}
+              <p className="mt-1 text-lg">{profileData.email}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">
-                  City
-                </label>
-                {editing ? (
-                  <Input
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    placeholder="New York"
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-lg">
-                    {formData.city || 'Not provided'}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-600">
-                  ZIP Code
-                </label>
-                {editing ? (
-                  <Input
-                    value={formData.zipCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, zipCode: e.target.value })
-                    }
-                    placeholder="10001"
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="mt-1 text-lg">
-                    {formData.zipCode || 'Not provided'}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-600">Phone</label>
-              {editing ? (
-                <Input
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  placeholder="(555) 123-4567"
-                  className="mt-1"
-                />
-              ) : (
-                <p className="mt-1 text-lg">
-                  {formData.phone || 'Not provided'}
-                </p>
-              )}
-            </div>
-
-            {editing && (
+            {editingProfile && (
               <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={handleSave}
+                <Button 
+                  onClick={handleSaveProfile} 
                   className="flex-1"
                   disabled={saving}
                 >
@@ -330,7 +364,7 @@ export default function AccountPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    setEditing(false);
+                    setEditingProfile(false);
                     fetchProfile();
                   }}
                   className="flex-1"
@@ -348,52 +382,45 @@ export default function AccountPage() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Orders</CardTitle>
             <Link href="/orders">
-              <Button variant="outline" size="sm">
+              <Button variant="ghost" size="sm">
                 View All
               </Button>
             </Link>
           </CardHeader>
           <CardContent>
             {recentOrders.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p className="text-gray-600 mb-4">No orders yet</p>
-                <Link href="/">
-                  <Button size="sm">Start Shopping</Button>
-                </Link>
-              </div>
+              <p className="text-gray-500 text-center py-4">No orders yet</p>
             ) : (
               <div className="space-y-3">
                 {recentOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="border rounded-lg p-4 hover:bg-gray-50 transition"
+                    className="border rounded-lg p-3 hover:bg-gray-50"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <p className="font-medium">#{order.id.slice(0, 8)}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">
-                          ${order.total.toFixed(2)}
-                        </p>
-                        <p
-                          className={`text-xs px-2 py-1 rounded ${
-                            order.paymentStatus === 'PAID'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {order.paymentStatus}
-                        </p>
-                      </div>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-sm font-medium">
+                        Order #{order.id.slice(0, 8)}
+                      </span>
+                      <span className="text-sm font-bold">
+                        ${order.total.toFixed(2)}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {order.OrderItem.length} item(s) • Status: {order.status}
-                    </p>
+                    <div className="flex gap-2">
+                      <span
+                        className={`text-xs px-2 py-1 rounded ${
+                          order.status === 'DELIVERED'
+                            ? 'bg-green-100 text-green-800'
+                            : order.status === 'SHIPPED'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {order.status}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {order.OrderItem.length} item(s)
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -401,6 +428,202 @@ export default function AccountPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Addresses Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            My Addresses
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              resetAddressForm();
+              setShowNewAddress(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Address
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {/* New/Edit Address Form */}
+          {(showNewAddress || editingAddress) && (
+            <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+              <h3 className="font-medium mb-4">
+                {editingAddress ? 'Edit Address' : 'New Address'}
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Type</label>
+                  <select
+                    value={addressForm.type}
+                    onChange={(e) =>
+                      setAddressForm({
+                        ...addressForm,
+                        type: e.target.value as 'HOME' | 'SHIPPING' | 'BILLING',
+                      })
+                    }
+                    className="w-full mt-1 p-2 border rounded"
+                  >
+                    <option value="HOME">Home</option>
+                    <option value="SHIPPING">Shipping</option>
+                    <option value="BILLING">Billing</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Label</label>
+                  <Input
+                    value={addressForm.label}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, label: e.target.value })
+                    }
+                    placeholder="Home, Work, etc."
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium">Street Address</label>
+                  <Input
+                    value={addressForm.address}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, address: e.target.value })
+                    }
+                    placeholder="123 Main St"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">City</label>
+                  <Input
+                    value={addressForm.city}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, city: e.target.value })
+                    }
+                    placeholder="New York"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">ZIP Code</label>
+                  <Input
+                    value={addressForm.zipCode}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, zipCode: e.target.value })
+                    }
+                    placeholder="10001"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium">Phone (Optional)</label>
+                  <Input
+                    value={addressForm.phone}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, phone: e.target.value })
+                    }
+                    placeholder="(555) 123-4567"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={addressForm.isDefault}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          isDefault: e.target.checked,
+                        })
+                      }
+                      className="rounded"
+                    />
+                    <span className="text-sm font-medium">Set as default</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={handleSaveAddress}
+                  disabled={saving}
+                  className="flex-1"
+                >
+                  {saving ? 'Saving...' : 'Save Address'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowNewAddress(false);
+                    setEditingAddress(null);
+                    resetAddressForm();
+                  }}
+                  disabled={saving}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Address List */}
+          {addresses.length === 0 && !showNewAddress && !editingAddress ? (
+            <p className="text-gray-500 text-center py-8">
+              No addresses saved yet
+            </p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-4">
+              {addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  className="border rounded-lg p-4 hover:bg-gray-50"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      {getAddressIcon(addr.type)}
+                      <span className="font-medium">{addr.label}</span>
+                    </div>
+                    {addr.isDefault && (
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 mb-3">
+                    <p>{addr.address}</p>
+                    <p>
+                      {addr.city}, {addr.zipCode}
+                    </p>
+                    {addr.phone && <p>{addr.phone}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEditAddress(addr)}
+                      className="flex-1"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteAddress(addr.id)}
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
