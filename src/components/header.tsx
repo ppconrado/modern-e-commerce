@@ -5,10 +5,16 @@ import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
 import { Button } from './ui/button';
 import { useSession, signOut } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 
 export function Header() {
+  const [mounted, setMounted] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { data: session } = useSession();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="border-b">
@@ -85,7 +91,7 @@ export function Header() {
           <Link href="/cart" className="relative">
             <Button variant="outline" size="icon">
               <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
+              {mounted && totalItems > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
                   {totalItems}
                 </span>

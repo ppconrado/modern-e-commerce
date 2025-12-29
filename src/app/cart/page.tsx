@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Trash2, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckoutForm } from '@/components/checkout-form';
 import {
   Dialog,
   DialogContent,
@@ -19,8 +19,8 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 export default function CartPage() {
+  const router = useRouter();
   const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
-  const [showCheckout, setShowCheckout] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
 
   const totalPrice = getTotalPrice();
@@ -156,7 +156,7 @@ export default function CartPage() {
               <Button
                 size="lg"
                 className="w-full"
-                onClick={() => setShowCheckout(true)}
+                onClick={() => router.push('/checkout')}
               >
                 Proceed to Checkout
               </Button>
@@ -164,23 +164,6 @@ export default function CartPage() {
           </Card>
         </div>
       </div>
-
-      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Checkout</DialogTitle>
-            <DialogDescription>
-              Complete your purchase by filling out the form below.
-            </DialogDescription>
-          </DialogHeader>
-          <CheckoutForm
-            onSuccess={() => {
-              setShowCheckout(false);
-              setOrderComplete(true);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
