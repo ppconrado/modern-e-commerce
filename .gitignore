@@ -12,6 +12,9 @@ playwright-report/
 playwright/.cache/
 stripe.exe
 
+# TypeScript build info
+tsconfig.tsbuildinfo
+
 # Local uploads (using Cloudinary instead)
 public/uploads/
 
