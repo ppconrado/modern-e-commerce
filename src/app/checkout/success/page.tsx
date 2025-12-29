@@ -5,31 +5,74 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useCartStore } from '@/store/cart';
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const sessionId = searchParams.get('session_id');
+  const { clearCart } = useCartStore();
+  const paymentIntent = searchParams.get('payment_intent');
+  const paymentIntentClientSecret = searchParams.get(
+    'payment_intent_client_secret'
+  );
+  const redirectStatus = searchParams.get('redirect_status');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderCreated, setOrderCreated] = useState(false);
 
   useEffect(() => {
-    if (!sessionId) {
-      setError('No session ID found');
+    // Check if payment was successful
+    if (redirectStatus === 'failed') {
+      setError('Payment failed. Please try again.');
       setLoading(false);
       return;
     }
 
-    // Clear cart from localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('cart-storage');
-    }
-
-    // Simulate loading for user experience
-    setTimeout(() => {
+    // Clear cart and create order
+    if (redirectStatus === 'succeeded' && paymentIntent) {
+      handleSuccessfulPayment();
+    } else {
       setLoading(false);
-    }, 1500);
-  }, [sessionId]);
+    }
+  }, [redirectStatus, paymentIntent]);
+
+  const handleSuccessfulPayment = async () => {
+    try {
+      // Get order data from sessionStorage (saved during checkout)
+      const orderDataStr = sessionStorage.getItem('pendingOrder');
+      if (orderDataStr) {
+        const orderData = JSON.parse(orderDataStr);
+
+        // Create order via API (for development - webhook alternative)
+        const response = await fetch('/api/test-create-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            paymentIntentId: paymentIntent,
+            items: orderData.items,
+            shippingInfo: orderData.shippingInfo,
+            total: orderData.total,
+          }),
+        });
+
+        if (response.ok) {
+          setOrderCreated(true);
+          // Clear order data from sessionStorage
+          sessionStorage.removeItem('pendingOrder');
+        }
+      }
+
+      // Clear cart
+      clearCart();
+    } catch (error) {
+      console.error('Error creating order:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,9 +104,20 @@ export default function CheckoutSuccessPage() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
+          <h1 className="text-2xl font-bold mb-2">Payment Failed</h1>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={() => router.push('/')}>Return to Home</Button>
+          <div className="space-y-3">
+            <Button onClick={() => router.push('/checkout')} className="w-full">
+              Try Again
+            </Button>
+            <Button
+              onClick={() => router.push('/')}
+              variant="outline"
+              className="w-full"
+            >
+              Return to Home
+            </Button>
+          </div>
         </Card>
       </div>
     );
@@ -84,15 +138,15 @@ export default function CheckoutSuccessPage() {
           You will receive a confirmation email with your order details.
         </p>
         <div className="space-y-3">
-          <Button onClick={() => router.push('/')} className="w-full">
-            Continue Shopping
+          <Button onClick={() => router.push('/orders')} className="w-full">
+            View My Orders
           </Button>
           <Button
-            onClick={() => router.push('/orders')}
+            onClick={() => router.push('/')}
             variant="outline"
             className="w-full"
           >
-            View My Orders
+            Continue Shopping
           </Button>
         </div>
       </Card>
