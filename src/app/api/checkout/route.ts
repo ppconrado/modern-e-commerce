@@ -72,104 +72,36 @@ export async function POST(req: NextRequest) {
       return sum + product!.price * item.quantity;
     }, 0);
 
-    // Save or update address if provided and not using existing addressId
-    let addressId = shippingInfo.addressId;
-    
-    if (!addressId && shippingInfo.address) {
-      // Create new address or update existing default shipping address
-      const existingShippingAddr = await prisma.address.findFirst({
-        where: {
-          userId: session.user.id,
-          type: 'SHIPPING',
-          isDefault: true,
-        },
-      });
-
-      if (existingShippingAddr) {
-        // Update existing default shipping address
-        await prisma.address.update({
-          where: { id: existingShippingAddr.id },
-          data: {
-            address: shippingInfo.address,
-            city: shippingInfo.city,
-            zipCode: shippingInfo.zipCode,
-            phone: shippingInfo.phone,
-          },
-        });
-        addressId = existingShippingAddr.id;
-      } else {
-        // Create new shipping address
-        const newAddress = await prisma.address.create({
-          data: {
-            userId: session.user.id,
-            type: 'SHIPPING',
-            label: 'Shipping Address',
-            address: shippingInfo.address,
-            city: shippingInfo.city,
-            zipCode: shippingInfo.zipCode,
-            phone: shippingInfo.phone,
-            isDefault: true,
-          },
-        });
-        addressId = newAddress.id;
-      }
-    }
-
-    // Create order in database first
-    const order = await prisma.order.create({
-      data: {
-        userId: session.user.id,
-        total,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        zipCode: shippingInfo.zipCode,
-        paymentMethod: 'stripe',
-        status: 'PENDING',
-        paymentStatus: 'PENDING',
-        OrderItem: {
-          create: items.map((item: any) => {
-            const product = products.find((p) => p.id === item.id);
-            return {
-              productId: item.id,
-              quantity: item.quantity,
-              price: product!.price,
-            };
-          }),
-        },
+    // Create Payment Intent (not creating order yet, wait for webhook confirmation)
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(total * 100), // Convert to cents
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
       },
-    });
-
-    // Create Stripe checkout session
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: `${process.env.NEXTAUTH_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/cart`,
-      customer_email: session.user.email || undefined,
-      client_reference_id: order.id,
       metadata: {
-        orderId: order.id,
         userId: session.user.id,
-      },
-    });
-
-    // Update order with Stripe session ID
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        stripeSessionId: stripeSession.id,
+        userEmail: session.user.email || '',
+        items: JSON.stringify(
+          items.map((item: any) => ({
+            id: item.id,
+            quantity: item.quantity,
+          }))
+        ),
+        shippingAddress: shippingInfo.address,
+        shippingCity: shippingInfo.city,
+        shippingZipCode: shippingInfo.zipCode,
+        shippingPhone: shippingInfo.phone || '',
       },
     });
 
     return NextResponse.json({
-      sessionId: stripeSession.id,
-      url: stripeSession.url,
+      clientSecret: paymentIntent.client_secret,
     });
   } catch (error) {
-    console.error('Stripe checkout error:', error);
+    console.error('Payment intent creation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: 'Failed to create payment intent' },
       { status: 500 }
     );
   }

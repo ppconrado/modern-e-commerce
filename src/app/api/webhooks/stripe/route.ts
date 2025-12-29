@@ -30,7 +30,76 @@ export async function POST(req: NextRequest) {
   // Handle different event types
   try {
     switch (event.type) {
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+        // Create order when payment is successful
+        const metadata = paymentIntent.metadata;
+
+        if (!metadata.userId || !metadata.items) {
+          console.error('Missing metadata in payment intent');
+          break;
+        }
+
+        const items = JSON.parse(metadata.items);
+
+        // Fetch products to get current prices
+        const products = await prisma.product.findMany({
+          where: {
+            id: { in: items.map((item: any) => item.id) },
+          },
+        });
+
+        // Create order
+        const order = await prisma.order.create({
+          data: {
+            userId: metadata.userId,
+            total: paymentIntent.amount / 100, // Convert from cents
+            address: metadata.shippingAddress,
+            city: metadata.shippingCity,
+            zipCode: metadata.shippingZipCode,
+            paymentMethod: 'stripe',
+            status: 'PROCESSING',
+            paymentStatus: 'PAID',
+            stripePaymentIntentId: paymentIntent.id,
+            OrderItem: {
+              create: items.map((item: any) => {
+                const product = products.find((p) => p.id === item.id);
+                return {
+                  productId: item.id,
+                  quantity: item.quantity,
+                  price: product!.price,
+                };
+              }),
+            },
+          },
+        });
+
+        // Update stock
+        for (const item of items) {
+          await prisma.product.update({
+            where: { id: item.id },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+
+        console.log(`✅ Order created successfully: ${order.id}`);
+        break;
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(`❌ Payment failed: ${paymentIntent.id}`);
+        // No need to create order, payment failed
+        break;
+      }
+
       case 'checkout.session.completed': {
+        // Legacy support - keeping for existing orders
         const session = event.data.object as Stripe.Checkout.Session;
 
         // Update order with payment success
