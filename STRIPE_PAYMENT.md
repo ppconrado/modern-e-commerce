@@ -2,33 +2,38 @@
 
 ## Overview
 
-This project uses **Stripe Checkout** for secure payment processing. Stripe handles all sensitive payment information, PCI compliance, and provides a professional checkout experience.
+This project uses **Stripe Payment Intents with Elements** for secure payment processing. Stripe handles all sensitive payment information, PCI compliance, and provides an embedded payment form experience.
 
 ## Features Implemented
 
 ### 1. Secure Payment Processing
 
-- ✅ Stripe Checkout integration (hosted payment page)
+- ✅ Stripe Payment Intents integration (embedded payment form)
+- ✅ Stripe Elements for customizable payment UI
 - ✅ Support for all major credit/debit cards
 - ✅ PCI DSS compliant (no card data touches our servers)
 - ✅ 256-bit SSL encryption
 - ✅ Real-time payment confirmation via webhooks
+- ✅ Automatic payment methods (Apple Pay, Google Pay when available)
 
 ### 2. Order Management
 
 - ✅ Payment status tracking (PENDING, PROCESSING, PAID, FAILED, REFUNDED)
 - ✅ Order status tracking (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED)
-- ✅ Stripe session ID and payment intent ID storage
-- ✅ Automatic order creation before payment
-- ✅ Order update after successful payment
+- ✅ Stripe Payment Intent ID storage
+- ✅ Automatic order creation via webhook after successful payment
+- ✅ Stock management (automatic decrement on order creation)
+- ✅ Development endpoint for order creation (when webhooks not available)
 
 ### 3. User Experience
 
-- ✅ Simplified checkout form (only shipping address required)
-- ✅ Redirect to Stripe's secure payment page
+- ✅ Embedded payment form on checkout page (no redirect)
+- ✅ Address management (save multiple addresses)
+- ✅ Order summary with cart items
 - ✅ Success page after payment
-- ✅ Automatic cart clearing after successful payment
-- ✅ Email receipt from Stripe (automatic)
+- ✅ Automatic cart clearing (Zustand store integration)
+- ✅ Dynamic return URL (works in any environment)
+- ✅ Order history page
 
 ## Setup Instructions
 
@@ -49,6 +54,8 @@ Add to your `.env` file:
 STRIPE_SECRET_KEY="sk_test_your_stripe_secret_key_here"
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_your_stripe_publishable_key_here"
 STRIPE_WEBHOOK_SECRET="whsec_your_webhook_secret_here"
+
+# Note: NEXT_PUBLIC_ prefix makes the key available to the browser (safe for publishable key only)
 ```
 
 ### 3. Set Up Stripe Webhooks (Development)
@@ -96,9 +103,9 @@ STRIPE_WEBHOOK_SECRET="whsec_your_webhook_secret_here"
 5. Click "Add endpoint"
 6. Enter: `https://abc123.ngrok.io/api/webhooks/stripe`
 7. Select events:
-   - `checkout.session.completed`
-   - `checkout.session.async_payment_succeeded`
-   - `checkout.session.async_payment_failed`
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+   - (Legacy support: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`)
    - `charge.refunded`
 8. Copy the webhook signing secret to `.env`
 
@@ -127,37 +134,57 @@ More test cards: https://stripe.com/docs/testing
 ### Payment Flow
 
 ```
-1. User adds products to cart
+1. User adds products to cart (Zustand store)
    ↓
 2. User goes to /cart and clicks "Proceed to Checkout"
    ↓
-3. User fills out shipping address
+3. User selects/adds shipping address on /checkout
    ↓
 4. User clicks "Proceed to Payment"
    ↓
-5. Server creates Order (status: PENDING, paymentStatus: PENDING)
+5. Server creates Payment Intent with order metadata
    ↓
-6. Server creates Stripe Checkout Session
+6. Payment form appears on same page (Stripe Elements)
    ↓
-7. User is redirected to Stripe's checkout page
+7. User enters card details in embedded form
    ↓
-8. User enters card details on Stripe
+8. User clicks "Complete Order"
    ↓
 9. Stripe processes payment
    ↓
-10. Stripe sends webhook to our server
+10. User redirected to /checkout/success
     ↓
-11. Server updates Order (status: PROCESSING, paymentStatus: PAID)
+11. Development: Order created via /api/test-create-order
+    Production: Stripe webhook creates order automatically
     ↓
-12. User redirected to /checkout/success
+12. Order saved (status: PROCESSING, paymentStatus: PAID)
     ↓
-13. Cart is cleared
+13. Product stock decremented
+    ↓
+14. Cart cleared (Zustand)
+    ↓
+15. User can view order in /orders
 ```
 
-### Database Schema
+### Development vs Production
 
-#### Order Model
+#### Development (localhost)
+- Stripe webhooks cannot reach localhost directly
+- Uses `/api/test-create-order` endpoint
+- Order data saved in sessionStorage during checkout
+- Order created on success page using saved data
 
+#### Production (deployed)
+- Stripe webhooks POST directly to `/api/webhooks/stripe`
+- OrdersPaymentIntentId String?       @unique
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  User                  User          @relation(fields: [userId], references: [id])
+  OrderItem             OrderItem[]
+}
+```
+
+**Note:** `stripeSessionId` removed - now using Payment Intents only
 ```prisma
 model Order {
   id                    String        @id
@@ -174,27 +201,7 @@ model Order {
   createdAt             DateTime      @default(now())
   updatedAt             DateTime
   User                  User          @relation(fields: [userId], references: [id])
-  OrderItem             OrderItem[]
-}
-```
-
-#### Payment Status Enum
-
-```prisma
-enum PaymentStatus {
-  PENDING      // Payment not yet processed
-  PROCESSING   // Payment is being processed
-  PAID         // Payment successful
-  FAILED       // Payment failed
-  REFUNDED     // Payment was refunded
-}
-```
-
-## API Endpoints
-
-### POST /api/checkout
-
-Creates a Stripe Checkout session.
+  OrderItem      Payment Intent.
 
 **Authentication:** Required (NextAuth session)
 
@@ -205,13 +212,17 @@ Creates a Stripe Checkout session.
   "items": [
     {
       "id": "product_id",
+      "name": "Product Name",
+      "price": 29.99,
+      "image": "https://...",
       "quantity": 2
     }
   ],
   "shippingInfo": {
     "address": "123 Main St",
     "city": "New York",
-    "zipCode": "10001"
+    "zipCode": "10001",
+    "phone": "+1234567890"
   }
 }
 ```
@@ -220,17 +231,92 @@ Creates a Stripe Checkout session.
 
 ```json
 {
-  "sessionId": "cs_test_...",
-  "url": "https://checkout.stripe.com/c/pay/cs_test_..."
+  "clientSecret": "pi_xxx_secret_yyy"
 }
 ```
 
 **Process:**
 
 1. Validates user authentication
-2. Validates cart items exist in database
-3. Creates Order in database (PENDING status)
-4. Creates Stripe Checkout Session
+2. Validates cart items and shipping info
+3. Fetches products from database (server-side price verification)
+4. Creates Payment Intent with metadata:
+   - `userId`, `userEmail`
+   - `items` (JSON string of product IDs and quantities)
+   - `shippingAddress`, `shippingCity`, `shippingZipCode`, `shippingPhone`
+5. Returns `clientSecret` for Stripe Elements
+
+### POST /api/test-create-order
+
+**⚠️ Development only** - Creates orders when webhooks are not available.
+
+**Authentication:** Required (NextAuth session)
+
+**Request:**
+
+```json
+{
+  "paymentIntentId": "pi_xxx",
+  "items": [...],
+  "shippingInfo": {...},
+  "total": 59.98
+}
+```
+
+**Response:**
+
+```json
+{
+  "order": { ... },
+  "supayment_intent.succeeded** (Primary)
+
+   - Creates new Order in database
+   - Sets: `paymentStatus = PAID`, `status = PROCESSING`
+   - Stores `stripePaymentIntentId`
+   - Creates OrderItems from metadata
+   - Decrements product stock
+
+2. **payment_intent.payment_failed**
+
+   - Logs payment failure
+   - No order created
+
+3. **checkout.session.completed** (Legacy support)
+
+   - Updates existing order: `paymentStatus = PAID`, `status = PROCESSING`
+   - Stores `stripePaymentIntentId`
+
+4. **checkout.session.async_payment_succeeded** (Legacy)
+
+   - Updates order: `paymentStatus = PAID`, `status = PROCESSING`
+
+5. **checkout.session.async_payment_failed** (Legacy)
+Payment Intent
+│   │   ├── test-create-order/
+│   │   │   └── route.ts              # Dev-only: create orders without webhooks
+│   │   └── webhooks/
+│   │       └── stripe/
+│   │           └── route.ts          # Handle Stripe webhooks
+│   ├── checkout/
+│   │   ├── page.tsx                  # Checkout page with Stripe Elements
+│   │   └── success/
+│   │       └── page.tsx              # Success page (clears cart, creates order in dev)
+│   ├── cart/
+│   │   └── page.tsx                  # Shopping cart
+│   └── orders/
+│       └── page.tsx                  # Order history
+├── store/
+│   └── cart.ts                       # Zustand cart store with persistence
+└── lib/
+    └── stripe.ts                     # Stripe client initialization
+```
+
+**Removed:**
+- ❌ `src/componenafter successful payment (prevents failed orders)
+- Payment Intent metadata prevents lost orders
+- Dynamic return URLs (no hardcoded localhost)
+- Zustand store for cart (persistent across page reloads)
+- SessionStorage for order data (temporary, cleared after success)
 5. Updates Order with stripeSessionId
 6. Returns Stripe checkout URL
 
@@ -255,31 +341,41 @@ Handles Stripe webhook events.
 
    - Updates order: `paymentStatus = FAILED`, `status = CANCELLED`
 
-4. **charge.refunded**
-   - Updates order: `paymentStatus = REFUNDED`, `status = CANCELLED`
+   - Consider using Resend, SendGrid, or similar
 
-## File Structure
+5. **Implement Refund Handling**
 
-```
+   - Admin interface for refunds (already handles refund webhooks)
+   - Automatic inventory restocking on refunds
+   - Customer notification system
+
+6. **Disable Development Endpoint**
+   - Remove or restrict `/api/test-create-order` in production
+   - Add environment check: `if (process.env.NODE_ENV === 'production') return 403`
 src/
 ├── app/
 │   ├── api/
 │   │   ├── checkout/
 │   │   │   └── route.ts              # Create Stripe checkout session
 │   │   └── webhooks/
-│   │       └── stripe/
-│   │           └── route.ts          # Handle Stripe webhooks
-│   └── checkout/
-│       └── success/
-│           └── page.tsx              # Success page after payment
-├── components/
-│   └── checkout-form.tsx             # Updated to use Stripe
-└── lib/
-    └── stripe.ts                     # Stripe client initialization
+│   │ View cart with correct totals
+- [ ] Click "Proceed to Checkout"
+- [ ] Select or add shipping address
+- [ ] Click "Proceed to Payment"
+- [ ] See embedded Stripe payment form (no redirect)
+- [ ] Enter test card: `4242 4242 4242 4242`
+- [ ] Click "Complete Order"
+- [ ] See payment processing state
+- [ ] Redirected to success page
+- [ ] Order created and visible in /orders
+- [ ] Order shows PAID and PROCESSING status
+- [ ] Cart is cleared (Zustand store)
+- [ ] Product stock decrement                   # Stripe client initialization
 ```
-
-## Security Considerations
-
+ (should redirect to home)
+- [ ] Test with invalid shipping info
+- [ ] Test payment form without Stripe Elements loaded
+- [ ] Test with incomplete card information
 ### ✅ Implemented
 
 - Stripe handles all card data (PCI compliant)
@@ -316,9 +412,11 @@ src/
    - Send refund notifications
 
 5. **Implement Refund Handling**
-
-   - Admin interface for refunds
-   - Automatic inventory restocking on refunds
+created after payment
+- [ ] Check webhook logs in Stripe Dashboard
+- [ ] Test duplicate webhook delivery (idempotency)
+- [ ] In dev: verify /api/test-create-order creates order
+- [ ] In dev: verify sessionStorage is cleared after success
    - Customer notification system
 
 6. **Add Error Handling**
@@ -336,19 +434,39 @@ src/
 - [ ] Click "Proceed to Payment"
 - [ ] Redirected to Stripe
 - [ ] Enter test card: `4242 4242 4242 4242`
-- [ ] Complete payment
-- [ ] Redirected to success page
-- [ ] Order shows in database with PAID status
-- [ ] Cart is cleared
+- [ ] Complete paymentcreated
 
-### Error Scenarios
+**Solution:**
 
-- [ ] Test declined card: `4000 0000 0000 0002`
+**In Development:**
+1. Check browser console for errors from /api/test-create-order
+2. Verify sessionStorage has 'pendingOrder' data
+3. Check success page is calling the API
+4. Verify user is authenticated
+
+**In Production:**
+1. Check webhook is being received (Stripe CLI logs or Dashboard)
+2. Check server logs for errors
+3. Verify database connection
+4. Test webhook endpoint manually with Stripe test events
+5. Ensure Payment Intent metadata contains all required fields
+
+### Issue: "Missing required fields" on test-create-order
+
+**Solution:** Verify sessionStorage contains order data. This is set during checkout when clicking "Proceed to Payment".
 - [ ] Test without authentication (should redirect to login)
 - [ ] Test with empty cart
 - [ ] Test with invalid shipping info
 - [ ] Cancel payment on Stripe page (should return to cart)
+This should not happen anymore - payment form is embedded on checkout page. If you see a redirect, check that you're using Payment Intents, not Checkout Sessions.
 
+### Issue: Cart not clearing after payment
+
+**Solution:** 
+1. Verify Zustand store is imported in success page
+2. Check `clearCart()` is being called
+3. Check browser localStorage for `cart-storage` key
+4. Hard refresh page (Ctrl+F5) to reload store
 ### Webhook Testing
 
 - [ ] Test webhook with Stripe CLI
@@ -369,12 +487,41 @@ src/
 1. Ensure Stripe CLI is running: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
 2. Check STRIPE_WEBHOOK_SECRET matches the CLI output
 3. Restart dev server after adding webhook secret
+Production Ready  
+**Architecture:** Payment Intents + Stripe Elements  
+**Cart:** Zustand with persistence  
+**Development:** Test endpoint for order creation  
+**Production:** Webhook-based order creation
 
-### Issue: "Invalid signature" webhook error
+## Recent Updates (December 2025)
 
-**Solution:** Make sure STRIPE_WEBHOOK_SECRET in `.env` matches the one from Stripe CLI or Dashboard
+### Migration from Checkout Sessions to Payment Intents
 
-### Issue: Payment successful but order not updated
+**Why the change:**
+- Better control over payment flow
+- Embedded payment form (better UX, no redirect)
+- More customization options
+- Same security and compliance
+
+**What changed:**
+- Removed Stripe Checkout Sessions
+- Added Stripe Elements for embedded payment form
+- Changed from redirect-based to embedded payment flow
+- Added development endpoint for testing without webhooks
+- Integrated Zustand for cart state management
+- Removed duplicate checkout form component
+
+**Migration steps for existing projects:**
+1. Update dependencies: `@stripe/react-stripe-js`, `@stripe/stripe-js`
+2. Update `/api/checkout` to create Payment Intents
+3. Update checkout page to use Stripe Elements
+4. Update webhook to handle `payment_intent.succeeded`
+5. Test thoroughly with test cards
+
+## Additional Resources
+
+- [Stripe Payment Intents Documentation](https://stripe.com/docs/payments/payment-intents)
+- [Stripe Elements Documentation](https://stripe.com/docs/stripe-js
 
 **Solution:**
 
