@@ -72,6 +72,19 @@ export async function POST(req: NextRequest) {
       return sum + product!.price * item.quantity;
     }, 0);
 
+    // Update user's address if provided
+    if (shippingInfo.address || shippingInfo.city || shippingInfo.zipCode) {
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          zipCode: shippingInfo.zipCode,
+          phone: shippingInfo.phone,
+        },
+      });
+    }
+
     // Create order in database first
     const order = await prisma.order.create({
       data: {

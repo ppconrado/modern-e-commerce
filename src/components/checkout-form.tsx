@@ -11,17 +11,20 @@ import { toast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const checkoutSchema = z.object({
   address: z.string().min(5, 'Address must be at least 5 characters'),
   city: z.string().min(2, 'City must be at least 2 characters'),
   zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  phone: z.string().optional(),
 });
 
 interface CheckoutFormData {
   address: string;
   city: string;
   zipCode: string;
+  phone?: string;
 }
 
 interface CheckoutFormProps {
@@ -32,14 +35,43 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   const { items, clearCart, getTotalPrice } = useCartStore();
   const { data: session } = useSession();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  // Load user's saved address
+  useEffect(() => {
+    const loadUserAddress = async () => {
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/profile');
+        if (response.ok) {
+          const { user } = await response.json();
+          if (user.address) setValue('address', user.address);
+          if (user.city) setValue('city', user.city);
+          if (user.zipCode) setValue('zipCode', user.zipCode);
+          if (user.phone) setValue('phone', user.phone);
+        }
+      } catch (error) {
+        console.error('Failed to load user address:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserAddress();
+  }, [session, setValue]);
 
   const onSubmit = async (data: CheckoutFormData) => {
     try {
@@ -95,6 +127,22 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
 
   const total = getTotalPrice();
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card>
@@ -130,6 +178,15 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
                 </p>
               )}
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Phone (Optional)</label>
+            <Input {...register('phone')} placeholder="(555) 123-4567" />
+            {errors.phone && (
+              <p className="text-sm text-destructive mt-1">
+                {errors.phone.message}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

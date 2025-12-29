@@ -36,9 +36,14 @@ export default function AccountPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    address: '',
+    city: '',
+    zipCode: '',
+    phone: '',
   });
 
   useEffect(() => {
@@ -48,13 +53,28 @@ export default function AccountPage() {
     }
 
     if (status === 'authenticated') {
-      setFormData({
-        fullName: session.user?.name || '',
-        email: session.user?.email || '',
-      });
+      fetchProfile();
       fetchOrders();
     }
-  }, [status, router, session]);
+  }, [status, router]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      if (!response.ok) throw new Error('Failed to fetch profile');
+      const data = await response.json();
+      setFormData({
+        fullName: data.user.fullName || '',
+        email: data.user.email || '',
+        address: data.user.address || '',
+        city: data.user.city || '',
+        zipCode: data.user.zipCode || '',
+        phone: data.user.phone || '',
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -70,8 +90,16 @@ export default function AccountPage() {
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
-      // TODO: Implement update user API
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Failed to update profile');
+
       toast({
         title: 'Profile updated',
         description: 'Your profile has been updated successfully.',
@@ -83,6 +111,8 @@ export default function AccountPage() {
         description: 'Failed to update profile.',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -185,7 +215,7 @@ export default function AccountPage() {
                   className="mt-1"
                 />
               ) : (
-                <p className="mt-1 text-lg">{session?.user?.name}</p>
+                <p className="mt-1 text-lg">{formData.fullName}</p>
               )}
             </div>
 
@@ -205,39 +235,108 @@ export default function AccountPage() {
                   disabled
                 />
               ) : (
-                <p className="mt-1 text-lg">{session?.user?.email}</p>
+                <p className="mt-1 text-lg">{formData.email}</p>
               )}
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Member Since
+              <label className="text-sm font-medium text-gray-600">
+                Address
               </label>
-              <p className="mt-1 text-lg">
-                {new Date().toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </p>
+              {editing ? (
+                <Input
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData({ ...formData, address: e.target.value })
+                  }
+                  placeholder="123 Main St"
+                  className="mt-1"
+                />
+              ) : (
+                <p className="mt-1 text-lg">
+                  {formData.address || 'Not provided'}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  City
+                </label>
+                {editing ? (
+                  <Input
+                    value={formData.city}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
+                    placeholder="New York"
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-lg">
+                    {formData.city || 'Not provided'}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  ZIP Code
+                </label>
+                {editing ? (
+                  <Input
+                    value={formData.zipCode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, zipCode: e.target.value })
+                    }
+                    placeholder="10001"
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="mt-1 text-lg">
+                    {formData.zipCode || 'Not provided'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-600">
+                Phone
+              </label>
+              {editing ? (
+                <Input
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phone: e.target.value })
+                  }
+                  placeholder="(555) 123-4567"
+                  className="mt-1"
+                />
+              ) : (
+                <p className="mt-1 text-lg">
+                  {formData.phone || 'Not provided'}
+                </p>
+              )}
             </div>
 
             {editing && (
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleSave} className="flex-1">
-                  Save Changes
+                <Button 
+                  onClick={handleSave} 
+                  className="flex-1"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setEditing(false);
-                    setFormData({
-                      fullName: session?.user?.name || '',
-                      email: session?.user?.email || '',
-                    });
+                    fetchProfile();
                   }}
                   className="flex-1"
+                  disabled={saving}
                 >
                   Cancel
                 </Button>

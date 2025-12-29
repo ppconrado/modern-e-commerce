@@ -62,6 +62,10 @@ model User {
     fullName  String
     password  String   @default("")
     role      UserRole @default(CUSTOMER)
+    address   String?
+    city      String?
+    zipCode   String?
+    phone     String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     Order     Order[]
