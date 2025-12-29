@@ -7,21 +7,25 @@ datasource db {
 }
 
 model Order {
-    id            String      @id
-    userId        String
-    status        OrderStatus @default(PENDING)
-    total         Float
-    address       String
-    city          String
-    zipCode       String
-    paymentMethod String
-    createdAt     DateTime    @default(now())
-    updatedAt     DateTime
-    User          User        @relation(fields: [userId], references: [id])
-    OrderItem     OrderItem[]
+    id                    String        @id
+    userId                String
+    status                OrderStatus   @default(PENDING)
+    paymentStatus         PaymentStatus @default(PENDING)
+    total                 Float
+    address               String
+    city                  String
+    zipCode               String
+    paymentMethod         String
+    stripeSessionId       String?       @unique
+    stripePaymentIntentId String?       @unique
+    createdAt             DateTime      @default(now())
+    updatedAt             DateTime
+    User                  User          @relation(fields: [userId], references: [id])
+    OrderItem             OrderItem[]
 
     @@index([status])
     @@index([userId])
+    @@index([stripeSessionId])
 }
 
 model OrderItem {
@@ -86,4 +90,12 @@ enum OrderStatus {
     SHIPPED
     DELIVERED
     CANCELLED
+}
+
+enum PaymentStatus {
+    PENDING
+    PROCESSING
+    PAID
+    FAILED
+    REFUNDED
 }
