@@ -169,20 +169,23 @@ More test cards: https://stripe.com/docs/testing
 ### Development vs Production
 
 #### Development (localhost)
+
 - Stripe webhooks cannot reach localhost directly
 - Uses `/api/test-create-order` endpoint
 - Order data saved in sessionStorage during checkout
 - Order created on success page using saved data
 
 #### Production (deployed)
+
 - Stripe webhooks POST directly to `/api/webhooks/stripe`
-- OrdersPaymentIntentId String?       @unique
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  User                  User          @relation(fields: [userId], references: [id])
-  OrderItem             OrderItem[]
-}
-```
+- OrdersPaymentIntentId String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User User @relation(fields: [userId], references: [id])
+  OrderItem OrderItem[]
+  }
+
+````
 
 **Note:** `stripeSessionId` removed - now using Payment Intents only
 ```prisma
@@ -225,7 +228,7 @@ model Order {
     "phone": "+1234567890"
   }
 }
-```
+````
 
 **Response:**
 
@@ -312,11 +315,13 @@ Payment Intent
 ```
 
 **Removed:**
+
 - ❌ `src/componenafter successful payment (prevents failed orders)
 - Payment Intent metadata prevents lost orders
 - Dynamic return URLs (no hardcoded localhost)
 - Zustand store for cart (persistent across page reloads)
 - SessionStorage for order data (temporary, cleared after success)
+
 5. Updates Order with stripeSessionId
 6. Returns Stripe checkout URL
 
@@ -343,22 +348,23 @@ Handles Stripe webhook events.
 
    - Consider using Resend, SendGrid, or similar
 
-5. **Implement Refund Handling**
+4. **Implement Refund Handling**
 
    - Admin interface for refunds (already handles refund webhooks)
    - Automatic inventory restocking on refunds
    - Customer notification system
 
-6. **Disable Development Endpoint**
+5. **Disable Development Endpoint**
    - Remove or restrict `/api/test-create-order` in production
    - Add environment check: `if (process.env.NODE_ENV === 'production') return 403`
-src/
-├── app/
-│   ├── api/
-│   │   ├── checkout/
-│   │   │   └── route.ts              # Create Stripe checkout session
-│   │   └── webhooks/
-│   │ View cart with correct totals
+     src/
+     ├── app/
+     │ ├── api/
+     │ │ ├── checkout/
+     │ │ │ └── route.ts # Create Stripe checkout session
+     │ │ └── webhooks/
+     │ │ View cart with correct totals
+
 - [ ] Click "Proceed to Checkout"
 - [ ] Select or add shipping address
 - [ ] Click "Proceed to Payment"
@@ -370,7 +376,8 @@ src/
 - [ ] Order created and visible in /orders
 - [ ] Order shows PAID and PROCESSING status
 - [ ] Cart is cleared (Zustand store)
-- [ ] Product stock decrement                   # Stripe client initialization
+- [ ] Product stock decrement # Stripe client initialization
+
 ```
  (should redirect to home)
 - [ ] Test with invalid shipping info
@@ -462,7 +469,7 @@ This should not happen anymore - payment form is embedded on checkout page. If y
 
 ### Issue: Cart not clearing after payment
 
-**Solution:** 
+**Solution:**
 1. Verify Zustand store is imported in success page
 2. Check `clearCart()` is being called
 3. Check browser localStorage for `cart-storage` key
@@ -487,10 +494,10 @@ This should not happen anymore - payment form is embedded on checkout page. If y
 1. Ensure Stripe CLI is running: `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
 2. Check STRIPE_WEBHOOK_SECRET matches the CLI output
 3. Restart dev server after adding webhook secret
-Production Ready  
-**Architecture:** Payment Intents + Stripe Elements  
-**Cart:** Zustand with persistence  
-**Development:** Test endpoint for order creation  
+Production Ready
+**Architecture:** Payment Intents + Stripe Elements
+**Cart:** Zustand with persistence
+**Development:** Test endpoint for order creation
 **Production:** Webhook-based order creation
 
 ## Recent Updates (December 2025)
@@ -561,7 +568,7 @@ Production Ready
 
 ---
 
-**Status:** ✅ Feature #2 Complete - Ready for testing  
+**Status:** ✅ Feature #2 Complete - Ready for testing
 **Next Feature:** Image Upload & Product Management
 
 ## Additional Resources
@@ -570,3 +577,4 @@ Production Ready
 - [Stripe Webhooks Guide](https://stripe.com/docs/webhooks)
 - [Stripe Test Cards](https://stripe.com/docs/testing)
 - [Stripe Dashboard](https://dashboard.stripe.com/)
+```
