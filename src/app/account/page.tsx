@@ -54,7 +54,7 @@ export default function AccountPage() {
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [showNewAddress, setShowNewAddress] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   const [profileData, setProfileData] = useState({
     fullName: '',
     email: '',
@@ -154,7 +154,7 @@ export default function AccountPage() {
       const url = editingAddress
         ? `/api/user/addresses/${editingAddress}`
         : '/api/user/addresses';
-      
+
       const method = editingAddress ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
@@ -167,9 +167,11 @@ export default function AccountPage() {
 
       toast({
         title: editingAddress ? 'Address updated' : 'Address added',
-        description: `Your address has been ${editingAddress ? 'updated' : 'added'} successfully.`,
+        description: `Your address has been ${
+          editingAddress ? 'updated' : 'added'
+        } successfully.`,
       });
-      
+
       setEditingAddress(null);
       setShowNewAddress(false);
       resetAddressForm();
@@ -236,10 +238,14 @@ export default function AccountPage() {
 
   const getAddressIcon = (type: string) => {
     switch (type) {
-      case 'HOME': return <Home className="h-4 w-4" />;
-      case 'BILLING': return <CreditCard className="h-4 w-4" />;
-      case 'SHIPPING': return <Package className="h-4 w-4" />;
-      default: return <MapPin className="h-4 w-4" />;
+      case 'HOME':
+        return <Home className="h-4 w-4" />;
+      case 'BILLING':
+        return <CreditCard className="h-4 w-4" />;
+      case 'SHIPPING':
+        return <Package className="h-4 w-4" />;
+      default:
+        return <MapPin className="h-4 w-4" />;
     }
   };
 
@@ -346,16 +352,14 @@ export default function AccountPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-600">
-                Email
-              </label>
+              <label className="text-sm font-medium text-gray-600">Email</label>
               <p className="mt-1 text-lg">{profileData.email}</p>
             </div>
 
             {editingProfile && (
               <div className="flex gap-2 pt-4">
-                <Button 
-                  onClick={handleSaveProfile} 
+                <Button
+                  onClick={handleSaveProfile}
                   className="flex-1"
                   disabled={saving}
                 >
@@ -489,7 +493,10 @@ export default function AccountPage() {
                   <Input
                     value={addressForm.address}
                     onChange={(e) =>
-                      setAddressForm({ ...addressForm, address: e.target.value })
+                      setAddressForm({
+                        ...addressForm,
+                        address: e.target.value,
+                      })
                     }
                     placeholder="123 Main St"
                     className="mt-1"
@@ -507,18 +514,23 @@ export default function AccountPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">ZIP Code</label>
+                  <label className="text-sm font-medium">ZIP/Postal Code</label>
                   <Input
                     value={addressForm.zipCode}
                     onChange={(e) =>
-                      setAddressForm({ ...addressForm, zipCode: e.target.value })
+                      setAddressForm({
+                        ...addressForm,
+                        zipCode: e.target.value,
+                      })
                     }
-                    placeholder="10001"
+                    placeholder="01310-100 or 10001"
                     className="mt-1"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium">Phone (Optional)</label>
+                  <label className="text-sm font-medium">
+                    Phone (Optional)
+                  </label>
                   <Input
                     value={addressForm.phone}
                     onChange={(e) =>

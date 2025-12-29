@@ -17,7 +17,11 @@ const checkoutSchema = z.object({
   addressId: z.string().optional(),
   address: z.string().min(5, 'Address must be at least 5 characters'),
   city: z.string().min(2, 'City must be at least 2 characters'),
-  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, 'Invalid ZIP code'),
+  // Support Brazilian CEP (XXXXX-XXX), US ZIP (XXXXX or XXXXX-XXXX), and other international formats
+  zipCode: z
+    .string()
+    .min(3, 'Postal code is required')
+    .regex(/^[0-9A-Za-z\s-]{3,12}$/, 'Invalid postal code format'),
   phone: z.string().optional(),
 });
 
@@ -76,11 +80,11 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
         if (response.ok) {
           const { addresses } = await response.json();
           setAddresses(addresses);
-          
+
           // Auto-select default or first address
           const defaultAddr = addresses.find((a: Address) => a.isDefault);
           const addrToUse = defaultAddr || addresses[0];
-          
+
           if (addrToUse) {
             setSelectedAddressId(addrToUse.id);
             setValue('addressId', addrToUse.id);
@@ -103,7 +107,7 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
   }, [session, setValue]);
 
   const handleAddressSelect = (addressId: string) => {
-    const addr = addresses.find(a => a.id === addressId);
+    const addr = addresses.find((a) => a.id === addressId);
     if (addr) {
       setSelectedAddressId(addressId);
       setValue('addressId', addr.id);
@@ -276,8 +280,11 @@ export function CheckoutForm({ onSuccess }: CheckoutFormProps) {
                   )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium">ZIP Code</label>
-              <Input {...register('zipCode')} placeholder="10001" />
+                  <label className="text-sm font-medium">ZIP/Postal Code</label>
+                  <Input
+                    {...register('zipCode')}
+                    placeholder="01310-100 or 10001"
+                  />
                   {errors.zipCode && (
                     <p className="text-sm text-destructive mt-1">
                       {errors.zipCode.message}

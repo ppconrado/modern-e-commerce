@@ -8,7 +8,12 @@ const addressUpdateSchema = z.object({
   label: z.string().min(2).optional(),
   address: z.string().min(5).optional(),
   city: z.string().min(2).optional(),
-  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/).optional(),
+  // Support Brazilian CEP (XXXXX-XXX), US ZIP (XXXXX or XXXXX-XXXX), and other international formats
+  zipCode: z
+    .string()
+    .min(3)
+    .regex(/^[0-9A-Za-z\s-]{3,12}$/, 'Invalid postal code format')
+    .optional(),
   phone: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
