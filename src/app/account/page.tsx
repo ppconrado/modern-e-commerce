@@ -301,9 +301,7 @@ export default function AccountPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-600">
-                Phone
-              </label>
+              <label className="text-sm font-medium text-gray-600">Phone</label>
               {editing ? (
                 <Input
                   value={formData.phone}
@@ -322,8 +320,8 @@ export default function AccountPage() {
 
             {editing && (
               <div className="flex gap-2 pt-4">
-                <Button 
-                  onClick={handleSave} 
+                <Button
+                  onClick={handleSave}
                   className="flex-1"
                   disabled={saving}
                 >

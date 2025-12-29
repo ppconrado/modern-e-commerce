@@ -8,7 +8,10 @@ const profileUpdateSchema = z.object({
   email: z.string().email().optional(),
   address: z.string().min(5).optional(),
   city: z.string().min(2).optional(),
-  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/).optional(),
+  zipCode: z
+    .string()
+    .regex(/^\d{5}(-\d{4})?$/)
+    .optional(),
   phone: z.string().optional(),
 });
 
