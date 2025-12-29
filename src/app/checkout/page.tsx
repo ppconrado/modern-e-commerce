@@ -62,8 +62,7 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
     setProcessing(true);
 
     try {
-      // Use hardcoded URL for reliability - no window.location
-      const returnUrl = 'http://localhost:3000/checkout/success';
+      const returnUrl = `${window.location.origin}/checkout/success`;
 
       const result = await stripe.confirmPayment({
         elements,
@@ -97,11 +96,6 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-yellow-100 border border-yellow-400 p-4 rounded mb-4">
-        <p className="text-sm font-bold">
-          DEBUG: Código atualizado - versão 2.0
-        </p>
-      </div>
       <PaymentElement />
       <Button
         type="submit"
