@@ -9,24 +9,23 @@ const orderSchema = z.object({
   address: z.string().min(5),
   city: z.string().min(2),
   zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
-  items: z.array(
-    z.object({
-      productId: z.string(),
-      quantity: z.number().min(1),
-    })
-  ).min(1),
+  items: z
+    .array(
+      z.object({
+        productId: z.string(),
+        quantity: z.number().min(1),
+      })
+    )
+    .min(1),
   total: z.number().min(0),
 });
 
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const orders = await prisma.order.findMany({
@@ -151,32 +150,6 @@ export async function POST(request: Request) {
     console.error('Error creating order:', error);
     return NextResponse.json(
       { error: 'Failed to create order' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET() {
-  try {
-    const orders = await prisma.order.findMany({
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-        user: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return NextResponse.json(orders);
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
       { status: 500 }
     );
   }

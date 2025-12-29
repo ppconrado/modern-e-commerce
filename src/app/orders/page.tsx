@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Package, CheckCircle, Clock, XCircle, TruckIcon } from 'lucide-react';
+import {
+  Loader2,
+  Package,
+  CheckCircle,
+  Clock,
+  XCircle,
+  TruckIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface OrderItem {
@@ -106,16 +113,20 @@ export default function OrdersPage() {
           <p className="text-gray-600 mb-6">
             Start shopping to see your orders here
           </p>
-          <Button onClick={() => router.push('/')}>
-            Browse Products
-          </Button>
+          <Button onClick={() => router.push('/')}>Browse Products</Button>
         </Card>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => {
-            const StatusIcon = statusIcons[order.status as keyof typeof statusIcons] || Clock;
-            const statusColor = statusColors[order.status as keyof typeof statusColors] || statusColors.PENDING;
-            const paymentColor = paymentStatusColors[order.paymentStatus as keyof typeof paymentStatusColors] || 'text-gray-600';
+            const StatusIcon =
+              statusIcons[order.status as keyof typeof statusIcons] || Clock;
+            const statusColor =
+              statusColors[order.status as keyof typeof statusColors] ||
+              statusColors.PENDING;
+            const paymentColor =
+              paymentStatusColors[
+                order.paymentStatus as keyof typeof paymentStatusColors
+              ] || 'text-gray-600';
 
             return (
               <Card key={order.id}>
@@ -126,7 +137,8 @@ export default function OrdersPage() {
                         Order #{order.id.slice(0, 8)}
                       </CardTitle>
                       <p className="text-sm text-gray-600">
-                        Placed on {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        Placed on{' '}
+                        {new Date(order.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -136,13 +148,17 @@ export default function OrdersPage() {
                       </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <div className={`px-3 py-1.5 rounded-lg border flex items-center gap-2 ${statusColor}`}>
+                      <div
+                        className={`px-3 py-1.5 rounded-lg border flex items-center gap-2 ${statusColor}`}
+                      >
                         <StatusIcon className="h-4 w-4" />
                         <span className="text-sm font-medium capitalize">
                           {order.status.toLowerCase()}
                         </span>
                       </div>
-                      <div className={`px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-2 ${paymentColor}`}>
+                      <div
+                        className={`px-3 py-1.5 rounded-lg border border-gray-200 flex items-center gap-2 ${paymentColor}`}
+                      >
                         <span className="text-sm font-medium">
                           Payment: {order.paymentStatus}
                         </span>
@@ -150,7 +166,7 @@ export default function OrdersPage() {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent className="pt-6">
                   {/* Order Items */}
                   <div className="space-y-4 mb-6">
@@ -185,7 +201,8 @@ export default function OrdersPage() {
                       <div>
                         <h4 className="font-medium mb-2">Shipping Address</h4>
                         <p className="text-sm text-gray-600">
-                          {order.address}<br />
+                          {order.address}
+                          <br />
                           {order.city}, {order.zipCode}
                         </p>
                       </div>

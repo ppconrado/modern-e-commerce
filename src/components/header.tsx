@@ -40,6 +40,12 @@ export function Header() {
 
           {session ? (
             <div className="flex items-center gap-4">
+              <Link
+                href="/account"
+                className="text-sm font-medium hover:underline"
+              >
+                My Account
+              </Link>
               <span className="text-sm text-gray-600">
                 <User className="inline h-4 w-4 mr-1" />
                 {session.user?.name}
