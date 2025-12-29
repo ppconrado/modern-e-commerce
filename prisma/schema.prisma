@@ -42,22 +42,35 @@ model OrderItem {
 }
 
 model Product {
-    id            String      @id @default(cuid())
+    id            String         @id @default(cuid())
     name          String
     description   String
     price         Float
-    image         String
+    image         String // Primary image URL
     category      String
     stock         Int
-    averageRating Float       @default(0)
-    reviewCount   Int         @default(0)
-    createdAt     DateTime    @default(now())
-    updatedAt     DateTime    @updatedAt
+    averageRating Float          @default(0)
+    reviewCount   Int            @default(0)
+    createdAt     DateTime       @default(now())
+    updatedAt     DateTime       @updatedAt
     OrderItem     OrderItem[]
     Review        Review[]
+    ProductImage  ProductImage[]
 
     @@index([category])
     @@index([averageRating])
+}
+
+model ProductImage {
+    id        String   @id @default(cuid())
+    productId String
+    url       String
+    altText   String?
+    order     Int      @default(0) // Display order
+    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@index([productId])
 }
 
 model Review {
