@@ -1,0 +1,13 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [setup] ÔÇ║ tests\auth.setup.ts:5:6 ÔÇ║ authenticate
+[1A[2K[setup] ÔÇ║ tests\auth.setup.ts:5:6 ÔÇ║ authenticate
+Ô£à Authentication successful - session saved
+
+[1A[2K  1 passed (12.7s)
+
+To open last HTML report run:
+[36m[39m
+[36m  npx playwright show-report[39m
+[36m[39m

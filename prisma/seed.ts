@@ -125,7 +125,18 @@ async function main() {
     },
   });
 
-  console.log(`Created users: ${user1.fullName}, ${user2.fullName}`);
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      fullName: 'Test User',
+      password: hashedPassword,
+      role: 'CUSTOMER',
+    },
+  });
+
+  console.log(
+    `Created users: ${user1.fullName}, ${user2.fullName}, ${testUser.fullName}`
+  );
 
   console.log('Seeding finished.');
 }

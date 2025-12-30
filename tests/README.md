@@ -101,6 +101,20 @@ npx playwright test --project=webkit
 - ✅ Show address selection on checkout
 - ✅ Require address selection before payment
 - ✅ Display order history
+- ✅ Display user account page
+
+### Recommended for Maximum Robustness
+
+- ⬜ Test invalid login (wrong password/email)
+- ⬜ Test registration with existing email
+- ⬜ Test session persistence (login, refresh, navigation)
+- ⬜ Test permission errors (customer cannot access /admin)
+- ⬜ Test error messages for failed actions
+- ⬜ Test cart empty state and removal of items
+- ⬜ Test checkout/payment with invalid/declined cards
+- ⬜ Test UI feedback for all critical actions
+
+> **Tip:** Add/expand tests for these scenarios to further reduce risk of user-facing bugs in production.
 
 ## Test Configuration
 
@@ -169,10 +183,13 @@ timeout: 60000 // 60 seconds
 ## Best Practices
 
 1. **Always start fresh:** Tests clear cookies before authentication tests
-2. **Wait for elements:** Use `waitForSelector` for dynamic content
-3. **Use descriptive selectors:** Prefer text content over CSS classes
-4. **Test user flows:** Test complete scenarios, not just individual actions
+2. **Wait for elements:** Use `waitForSelector` or `getByRole` for dynamic content and headings
+3. **Use descriptive selectors:** Prefer text content and roles over CSS classes
+4. **Test user flows:** Test complete scenarios, not só ações isoladas
 5. **Isolate tests:** Each test should be independent
+6. **Prefer getByRole para headings:** Use `getByRole('heading', { name: /texto/i })` para maior robustez
+7. **Evite ambiguidade:** Se mais de um elemento for retornado, refine o seletor (ex: `level: 1` para `<h1>`, texto exato, etc.)
+8. **Cubra edge cases:** Sempre que possível, adicione testes para fluxos de erro e casos de borda
 
 ## CI/CD Integration
 
