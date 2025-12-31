@@ -42,26 +42,17 @@
 
 ```mermaid
 flowchart TD
-  User[Usuário] -->|1. Interage| Browser[Browser]
-  Browser -->|2. Renderiza| ReactUI[React UI (Next.js)]
-  ReactUI -->|3. Solicita dados| TanStack[TanStack Query]
-  TanStack -->|4. Chama API| APIRoute[API Route (Next.js)]
-  APIRoute -->|5. Consulta| Prisma[Prisma ORM]
-  Prisma -->|6. Executa SQL| Postgres[PostgreSQL DB]
-  Postgres -->|7. Retorna dados| Prisma
+  User -->|1. Interage| Browser
+  Browser -->|2. Renderiza| ReactUI
+  ReactUI -->|3. Solicita| TanStack
+  TanStack -->|4. Chama API| APIRoute
+  APIRoute -->|5. Consulta| Prisma
+  Prisma -->|6. SQL| Postgres
+  Postgres -->|7. Retorna| Prisma
   Prisma -->|8. Valida| APIRoute
-  APIRoute -->|9. Responde JSON| TanStack
-  TanStack -->|10. Atualiza UI| ReactUI
-  ReactUI -->|11. Atualiza tela| Browser
-
-  %% Distribuição vertical e rótulos didáticos
-  style User fill:#f9f,stroke:#333,stroke-width:2
-  style Browser fill:#e0e0ff,stroke:#333,stroke-width:2
-  style ReactUI fill:#bbf,stroke:#333,stroke-width:2
-  style TanStack fill:#bfb,stroke:#333,stroke-width:2
-  style APIRoute fill:#ffd,stroke:#333,stroke-width:2
-  style Prisma fill:#fcf,stroke:#333,stroke-width:2
-  style Postgres fill:#eee,stroke:#333,stroke-width:2
+  APIRoute -->|9. Responde| TanStack
+  TanStack -->|10. Atualiza| ReactUI
+  ReactUI -->|11. Atualiza| Browser
 ```
 
 ### Legenda do Fluxo (Passo a Passo)
