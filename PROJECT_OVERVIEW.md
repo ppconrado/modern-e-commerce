@@ -107,18 +107,18 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  A[User enters email & password] --> B[Login Form (React)]
-  B --> C[signIn('credentials')]
-  C --> D[NextAuth.js (API Route)]
-  D --> E[Prisma ORM]
-  E --> F[PostgreSQL DB]
+  A[User] --> B[Login Form]
+  B --> C[signIn]
+  C --> D[NextAuth]
+  D --> E[Prisma]
+  E --> F[PostgreSQL]
   F --> E
   E --> D
   D -->|Valid?| D2{User Valid?}
-  D2 -- Yes --> G[Set Session Cookie]
-  D2 -- No --> H[Return Error]
-  G --> I[Browser stores session]
-  I --> J[User redirected to app]
+  D2 -- Yes --> G[Set Session]
+  D2 -- No --> H[Error]
+  G --> I[Session Stored]
+  I --> J[Redirected]
   H --> B
 ```
 
@@ -269,13 +269,13 @@ flowchart TD
 ```mermaid
 flowchart TD
   U[User] --> Browser
-  Browser --> React[React Components (UI, Forms, Pages)]
-  React --> Query[TanStack Query (Data Fetching, Caching)]
-  Query --> API[Next.js API Routes (Business Logic, REST)]
-  React --> Auth[NextAuth.js (Auth, Session)]
+  Browser --> React
+  React --> Query
+  Query --> API
+  React --> Auth
   Auth --> API
-  API --> Prisma[Prisma ORM (DB Access, Validation)]
-  Prisma --> DB[PostgreSQL (Relational Database)]
+  API --> Prisma
+  Prisma --> DB
   DB --> Prisma
   Prisma --> API
   API --> Query
