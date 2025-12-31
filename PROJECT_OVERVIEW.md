@@ -168,11 +168,29 @@ erDiagram
 - **OrderItem**: Connects orders and products, tracks quantity.
 - **CartItem**: Tracks products in a user's cart.
 - **Address**: Stores user shipping/billing addresses.
-- **Product**: Can be in many order items and cart items.
+- **Product**: Can be in many order items and cart items. **Além disso, cada produto possui um campo `image` que armazena a URL da imagem principal do produto.**
 
-**For Students:**
+### Serviço de Imagens: Cloudinary
 
-- This ERD shows how data is structured and related in a real e-commerce app.
+No projeto, as imagens dos produtos não são armazenadas diretamente no banco de dados, mas sim em um serviço externo chamado **Cloudinary**. O campo `image` da entidade Product guarda a URL da imagem hospedada na nuvem.
+
+- **Como funciona:**
+
+  - Quando um administrador faz upload de uma imagem de produto, o arquivo é enviado para o Cloudinary via API.
+  - O Cloudinary armazena a imagem, aplica otimizações (tamanho, qualidade, formato) e retorna uma URL segura.
+  - Essa URL é salva no campo `image` do produto no banco de dados.
+  - O frontend utiliza essa URL para exibir a imagem do produto em todas as páginas (loja, admin, carrinho, etc).
+
+- **Vantagens do Cloudinary:**
+  - Armazenamento escalável e seguro para imagens.
+  - Otimização automática para web (compressão, formatos modernos).
+  - URLs públicas e protegidas para fácil integração.
+  - Permite múltiplas imagens por produto (campo adicional `ProductImage` para galeria, se necessário).
+
+**Para estudantes:**
+
+- O uso de um serviço externo de imagens é uma prática comum em projetos modernos, pois facilita a gestão, otimização e entrega de arquivos estáticos sem sobrecarregar o banco de dados.
+- Sempre que ver um campo `image` ou galeria de imagens, lembre-se que o arquivo está na nuvem e o banco só guarda o link.
 
 ---
 
