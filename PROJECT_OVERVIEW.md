@@ -42,32 +42,66 @@
 
 ```mermaid
 flowchart TD
-  User -->|1. Interage| Browser
-  Browser -->|2. Renderiza| ReactUI
-  ReactUI -->|3. Solicita| TanStack
-  TanStack -->|4. Chama API| APIRoute
-  APIRoute -->|5. Consulta| Prisma
-  Prisma -->|6. SQL| Postgres
-  Postgres -->|7. Retorna| Prisma
-  Prisma -->|8. Valida| APIRoute
-  APIRoute -->|9. Responde| TanStack
-  TanStack -->|10. Atualiza| ReactUI
-  ReactUI -->|11. Atualiza| Browser
+  subgraph Usuário
+    User[Usuário]
+    Browser[Browser]
+  end
+  subgraph Frontend
+    ReactUI[React UI]
+    TanStack[TanStack Query]
+    Auth[NextAuth.js]
+  end
+  subgraph Backend
+    APIRoute[API Route]
+    Prisma[Prisma ORM]
+    DB[PostgreSQL]
+    Cloudinary[Cloudinary]
+  end
+
+  User -- "1. Clica, digita" --> Browser
+  Browser -- "2. Renderiza UI" --> ReactUI
+  ReactUI -- "3. Busca dados" --> TanStack
+  ReactUI -- "4. Login/Session" --> Auth
+  TanStack -- "5. Chama API" --> APIRoute
+  Auth -- "6. Chama API (login)" --> APIRoute
+  APIRoute -- "7. Consulta dados" --> Prisma
+  Prisma -- "8. Executa SQL" --> DB
+  Prisma -- "9. Busca imagem" --> Cloudinary
+  DB -- "10. Retorna dados" --> Prisma
+  Cloudinary -- "11. Retorna URL imagem" --> Prisma
+  Prisma -- "12. Valida e retorna" --> APIRoute
+  APIRoute -- "13. Responde JSON" --> TanStack
+  TanStack -- "14. Atualiza cache" --> ReactUI
+  ReactUI -- "15. Atualiza tela" --> Browser
+
+  %% Legenda dos módulos
+  style User fill:#f9f,stroke:#333,stroke-width:2
+  style Browser fill:#e0e0ff,stroke:#333,stroke-width:2
+  style ReactUI fill:#bbf,stroke:#333,stroke-width:2
+  style TanStack fill:#bfb,stroke:#333,stroke-width:2
+  style Auth fill:#ffd,stroke:#333,stroke-width:2
+  style APIRoute fill:#ffd,stroke:#333,stroke-width:2
+  style Prisma fill:#fcf,stroke:#333,stroke-width:2
+  style DB fill:#eee,stroke:#333,stroke-width:2
+  style Cloudinary fill:#cce,stroke:#333,stroke-width:2
 ```
 
 ### Legenda do Fluxo (Passo a Passo)
 
-1. **Usuário**: Clica, digita, envia formulários.
+1. **Usuário**: Interage com a aplicação (cliques, digitação, envio de formulários).
 2. **Browser**: Renderiza a interface React.
-3. **React UI**: Usa TanStack Query para buscar ou atualizar dados.
-4. **TanStack Query**: Faz requisição para API REST (Next.js API Route).
-5. **API Route**: Recebe a requisição, executa lógica de negócio.
-6. **Prisma ORM**: Traduz requisição para SQL e acessa o banco.
-7. **Banco de Dados**: Retorna dados para o Prisma.
-8. **Prisma ORM**: Valida e retorna dados para a API.
-9. **API Route**: Responde com JSON para o frontend.
-10. **TanStack Query**: Atualiza cache e repassa dados para a UI.
-11. **React UI**: Atualiza a tela do usuário instantaneamente.
+3. **React UI**: Solicita dados via TanStack Query ou autenticação via NextAuth.js.
+4. **TanStack Query**: Realiza requisições para API REST.
+5. **NextAuth.js**: Gerencia login, sessão e autenticação.
+6. **API Route**: Recebe requisições do frontend, executa lógica de negócio.
+7. **Prisma ORM**: Traduz requisições em comandos SQL para o banco de dados.
+8. **Prisma ORM**: Busca URLs de imagens no Cloudinary quando necessário.
+9. **Banco de Dados**: Retorna dados solicitados para o Prisma.
+10. **Cloudinary**: Retorna URLs das imagens dos produtos.
+11. **Prisma ORM**: Valida dados e retorna para a API.
+12. **API Route**: Responde ao frontend com dados em formato JSON.
+13. **TanStack Query**: Atualiza cache local e repassa dados para a UI.
+14. **React UI**: Atualiza a tela do usuário instantaneamente.
 
 ### Dicas para Estudantes
 
@@ -133,8 +167,20 @@ erDiagram
   Product {
     int id
     string name
+    string description
     float price
+    string image
+    string category
     int stock
+    float averageRating
+    int reviewCount
+  }
+  ProductImage {
+    int id
+    int productId
+    string url
+    string altText
+    int order
   }
   Order {
     int id
@@ -159,6 +205,7 @@ erDiagram
   Product ||--o{ OrderItem : in
   Product ||--o{ CartItem : in
   User ||--o{ CartItem : has
+  Product ||--o{ ProductImage : has
 ```
 
 **Entity Relationship Explanation:**
@@ -168,7 +215,26 @@ erDiagram
 - **OrderItem**: Connects orders and products, tracks quantity.
 - **CartItem**: Tracks products in a user's cart.
 - **Address**: Stores user shipping/billing addresses.
-- **Product**: Can be in many order items and cart items. **Além disso, cada produto possui um campo `image` que armazena a URL da imagem principal do produto.**
+- **Product**: Can be in many order items and cart items. Possui os campos:
+
+  - `name`: nome do produto
+  - `description`: descrição detalhada
+  - `price`: preço
+  - `image`: URL da imagem principal (armazenada no Cloudinary)
+  - `category`: categoria
+  - `stock`: quantidade em estoque
+  - `averageRating`: média das avaliações dos usuários
+  - `reviewCount`: número total de avaliações
+
+- **ProductImage**: Permite múltiplas imagens por produto (galeria). Campos:
+  - `url`: endereço da imagem na nuvem
+  - `altText`: texto alternativo para acessibilidade
+  - `order`: ordem de exibição na galeria
+
+**Para estudantes:**
+
+- O diagrama agora mostra todos os campos essenciais do produto, incluindo campos de avaliação e galeria de imagens, tornando o modelo mais próximo do que é usado em projetos reais.
+- Sempre confira se os campos do diagrama refletem o que é usado no código, na interface do usuário e nas funcionalidades avançadas (como avaliações e galeria).
 
 ### Serviço de Imagens: Cloudinary
 
