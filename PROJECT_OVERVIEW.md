@@ -41,43 +41,27 @@
 ## 3. Data Flow: Frontend ↔ Backend (Profissional e Didático)
 
 ```mermaid
-flowchart LR
-  %% Módulos representados por retângulos
-  User["<b>Usuário</b>"]:::user
-  Browser["<b>Browser</b>"]:::browser
-  ReactUI["<b>React UI<br/>(Next.js)</b>"]:::frontend
-  TanStack["<b>TanStack Query</b><br/>(Data Fetching)"]:::frontend
-  APIRoute["<b>API Route</b><br/>(Next.js)"]:::api
-  Prisma["<b>Prisma ORM</b>"]:::orm
-  Postgres["<b>PostgreSQL DB</b>"]:::db
+flowchart TD
+  User[Usuário] -->|1. Interage| Browser[Browser]
+  Browser -->|2. Renderiza| ReactUI[React UI (Next.js)]
+  ReactUI -->|3. Solicita dados| TanStack[TanStack Query]
+  TanStack -->|4. Chama API| APIRoute[API Route (Next.js)]
+  APIRoute -->|5. Consulta| Prisma[Prisma ORM]
+  Prisma -->|6. Executa SQL| Postgres[PostgreSQL DB]
+  Postgres -->|7. Retorna dados| Prisma
+  Prisma -->|8. Valida| APIRoute
+  APIRoute -->|9. Responde JSON| TanStack
+  TanStack -->|10. Atualiza UI| ReactUI
+  ReactUI -->|11. Atualiza tela| Browser
 
-  %% Fluxo de dados com setas
-  User -->|1. Interação| Browser
-  Browser -->|2. Renderiza| ReactUI
-  ReactUI -->|3. useQuery| TanStack
-  TanStack -->|4. HTTP Request| APIRoute
-  APIRoute -->|5. Query| Prisma
-  Prisma -->|6. SQL| Postgres
-  Postgres -->|7. Dados| Prisma
-  Prisma -->|8. Validação| APIRoute
-  APIRoute -->|9. JSON| TanStack
-  TanStack -->|10. Atualiza| ReactUI
-  ReactUI -->|11. Atualiza| Browser
-
-  %% Estilos dos módulos
-  classDef user fill:#f9f,stroke:#333,stroke-width:2;
-  classDef browser fill:#e0e0ff,stroke:#333,stroke-width:2;
-  classDef frontend fill:#bbf,stroke:#333,stroke-width:2;
-  classDef api fill:#ffd,stroke:#333,stroke-width:2;
-  classDef orm fill:#fcf,stroke:#333,stroke-width:2;
-  classDef db fill:#eee,stroke:#333,stroke-width:2;
-  class User user;
-  class Browser browser;
-  class ReactUI frontend;
-  class TanStack frontend;
-  class APIRoute api;
-  class Prisma orm;
-  class Postgres db;
+  %% Distribuição vertical e rótulos didáticos
+  style User fill:#f9f,stroke:#333,stroke-width:2
+  style Browser fill:#e0e0ff,stroke:#333,stroke-width:2
+  style ReactUI fill:#bbf,stroke:#333,stroke-width:2
+  style TanStack fill:#bfb,stroke:#333,stroke-width:2
+  style APIRoute fill:#ffd,stroke:#333,stroke-width:2
+  style Prisma fill:#fcf,stroke:#333,stroke-width:2
+  style Postgres fill:#eee,stroke:#333,stroke-width:2
 ```
 
 ### Legenda do Fluxo (Passo a Passo)
