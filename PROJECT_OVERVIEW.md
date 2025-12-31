@@ -107,25 +107,19 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  A[User enters email & password]:::user --> B[Login Form (React)]:::frontend
-  B --> C[signIn('credentials')]:::frontend
-  C --> D[NextAuth.js (API Route)]:::api
-  D --> E[Prisma ORM]:::orm
-  E --> F[(PostgreSQL DB)]:::db
+  A[User enters email & password] --> B[Login Form (React)]
+  B --> C[signIn('credentials')]
+  C --> D[NextAuth.js (API Route)]
+  D --> E[Prisma ORM]
+  E --> F[PostgreSQL DB]
   F --> E
   E --> D
   D -->|Valid?| D2{User Valid?}
-  D2 -- Yes --> G[Set Session Cookie]:::api
-  D2 -- No --> H[Return Error]:::api
-  G --> I[Browser stores session]:::frontend
-  I --> J[User redirected to app]:::user
+  D2 -- Yes --> G[Set Session Cookie]
+  D2 -- No --> H[Return Error]
+  G --> I[Browser stores session]
+  I --> J[User redirected to app]
   H --> B
-
-  classDef user fill:#f9f,stroke:#333,stroke-width:2;
-  classDef frontend fill:#bbf,stroke:#333,stroke-width:2;
-  classDef api fill:#ffd,stroke:#333,stroke-width:2;
-  classDef orm fill:#fcf,stroke:#333,stroke-width:2;
-  classDef db fill:#eee,stroke:#333,stroke-width:2;
 ```
 
 **Step-by-step Explanation:**
@@ -274,38 +268,19 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  subgraph User
-    U[User]
-    Browser
-  end
-  subgraph Frontend
-    React[React Components\n(UI, Forms, Pages)]
-    Query[TanStack Query\n(Data Fetching, Caching)]
-    Auth[NextAuth.js\n(Auth, Session)]
-  end
-  subgraph Backend
-    API[Next.js API Routes\n(Business Logic, REST)]
-    Prisma[Prisma ORM\n(DB Access, Validation)]
-    DB[(PostgreSQL)\n(Relational Database)]
-  end
-  U -- clicks, types --> Browser
-  Browser -- renders --> React
-  React -- fetches data --> Query
-  Query -- API calls --> API
-  Auth -- login/session --> API
-  API -- queries --> Prisma
-  Prisma -- SQL --> DB
-  DB -- results --> Prisma
-  Prisma -- data --> API
-  API -- JSON --> Query
-  Query -- updates --> React
-  React -- UI --> Browser
-
-  classDef user fill:#f9f,stroke:#333,stroke-width:2;
-  classDef frontend fill:#bbf,stroke:#333,stroke-width:2;
-  classDef api fill:#ffd,stroke:#333,stroke-width:2;
-  classDef orm fill:#fcf,stroke:#333,stroke-width:2;
-  classDef db fill:#eee,stroke:#333,stroke-width:2;
+  U[User] --> Browser
+  Browser --> React[React Components (UI, Forms, Pages)]
+  React --> Query[TanStack Query (Data Fetching, Caching)]
+  Query --> API[Next.js API Routes (Business Logic, REST)]
+  React --> Auth[NextAuth.js (Auth, Session)]
+  Auth --> API
+  API --> Prisma[Prisma ORM (DB Access, Validation)]
+  Prisma --> DB[PostgreSQL (Relational Database)]
+  DB --> Prisma
+  Prisma --> API
+  API --> Query
+  Query --> React
+  React --> Browser
 ```
 
 **Detailed Explanation for Students:**
