@@ -150,45 +150,39 @@ erDiagram
 ```mermaid
 erDiagram
   User {
-    int id PK "Primary Key"
+    int id
     string email
     string password
     string name
-    ...
   }
   Address {
-    int id PK
-    int userId FK
+    int id
+    int userId
     string street
     string city
-    ...
   }
   Product {
-    int id PK
+    int id
     string name
     float price
     int stock
-    ...
   }
   Order {
-    int id PK
-    int userId FK
+    int id
+    int userId
     string status
-    ...
   }
   OrderItem {
-    int id PK
-    int orderId FK
-    int productId FK
+    int id
+    int orderId
+    int productId
     int quantity
-    ...
   }
   CartItem {
-    int id PK
-    int userId FK
-    int productId FK
+    int id
+    int userId
+    int productId
     int quantity
-    ...
   }
   User ||--o{ Order : places
   User ||--o{ Address : has
