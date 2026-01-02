@@ -212,8 +212,8 @@ graph LR
     subgraph Protected Route Access
         direction TB
         G[Browser] -- "4. Request admin route" --> H[Middleware]
-        H -- "5. Verify session cookie" --> I{NextAuth: auth()}
-        I -- "Token valid & role is ADMIN?" --> J[Access Granted]
+        H -- "5. Verify session cookie" --> I{NextAuth: auth}
+        I -- "Token valid and role is ADMIN" --> J[Access Granted]
         I -- "Invalid or no permission" --> K[Access Denied]
     end
 ```
