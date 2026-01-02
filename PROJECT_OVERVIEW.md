@@ -1,369 +1,275 @@
-# E-Commerce Project: Architecture & Technology Overview
+# Guia de Estudo: Arquitetura do Projeto E-Commerce Full-Stack
 
-## 1. Project Structure Overview
-
-```
-/ (root)
-├── src/
-│   ├── app/           # Next.js app directory (pages, API routes)
-│   ├── components/    # React UI components
-│   ├── lib/           # Utility functions
-│   └── ...
-├── prisma/            # Prisma schema and seed
-├── tests/             # Playwright E2E and edge case tests
-├── package.json       # Project dependencies and scripts
-└── ...
-```
+Este documento serve como um guia de estudo detalhado da arquitetura e das tecnologias utilizadas no projeto de e-commerce. O objetivo é fornecer a estudantes de programação uma visão clara de como um aplicativo web moderno é construído, desde o frontend até o banco de dados.
 
 ---
 
-## 2. Technology Stack & Integration
+## 1. Visão Geral da Arquitetura
 
-| Layer           | Technology          | Purpose/Integration                                                                               |
-| --------------- | ------------------- | ------------------------------------------------------------------------------------------------- |
-| **Frontend**    | React (Next.js)     | UI, routing, SSR/SSG, API routes. Provides the user interface and navigation.                     |
-| **State/Fetch** | TanStack Query      | Data fetching, caching, React Suspense integration. Ensures efficient and consistent data access. |
-| **Auth**        | NextAuth.js         | Authentication, session management. Handles login, registration, and session cookies.             |
-| **Backend API** | Next.js API routes  | Handles business logic, connects to DB. All data and auth requests go through these endpoints.    |
-| **ORM/DB**      | Prisma + PostgreSQL | Database access, migrations, seeding. Prisma provides a type-safe interface to the database.      |
-| **Testing**     | Playwright          | E2E, edge case, and robustness tests. Simulates real user flows and checks for regressions.       |
-
-**Integration Explanation:**
-
-- The frontend (React/Next.js) renders UI and calls API routes for data and actions.
-- TanStack Query manages all data fetching and caching, and integrates with React Suspense for smooth loading states.
-- NextAuth.js provides secure authentication and session management, using Prisma to store user data in PostgreSQL.
-- All backend logic (including auth) is handled in Next.js API routes, which use Prisma to interact with the database.
-- Playwright tests run against the full stack, simulating real user actions and verifying both frontend and backend behavior.
-
----
-
-## 3. Data Flow: Frontend ↔ Backend (Profissional e Didático)
+A aplicação segue uma arquitetura **Full-Stack Monorepo** utilizando **Next.js**, onde o código do frontend e do backend coexistem no mesmo projeto. Isso simplifica o desenvolvimento e o deploy.
 
 ```mermaid
-flowchart TD
-  subgraph Usuário
-    User[Usuário]
-    Browser[Browser]
-  end
-  subgraph Frontend
-    ReactUI[React UI]
-    TanStack[TanStack Query]
-    Auth[NextAuth.js]
-  end
-  subgraph Backend
-    APIRoute[API Route]
-    Prisma[Prisma ORM]
-    DB[PostgreSQL]
-    Cloudinary[Cloudinary]
-  end
+graph TD
+    subgraph "Cliente"
+        Browser[Browser do Usuário]
+    end
 
-  User -- "1. Clica, digita" --> Browser
-  Browser -- "2. Renderiza UI" --> ReactUI
-  ReactUI -- "3. Busca dados" --> TanStack
-  ReactUI -- "4. Login/Session" --> Auth
-  TanStack -- "5. Chama API" --> APIRoute
-  Auth -- "6. Chama API (login)" --> APIRoute
-  APIRoute -- "7. Consulta dados" --> Prisma
-  Prisma -- "8. Executa SQL" --> DB
-  Prisma -- "9. Busca imagem" --> Cloudinary
-  DB -- "10. Retorna dados" --> Prisma
-  Cloudinary -- "11. Retorna URL imagem" --> Prisma
-  Prisma -- "12. Valida e retorna" --> APIRoute
-  APIRoute -- "13. Responde JSON" --> TanStack
-  TanStack -- "14. Atualiza cache" --> ReactUI
-  ReactUI -- "15. Atualiza tela" --> Browser
+    subgraph "Servidor (Next.js)"
+        subgraph "Frontend"
+            A[React UI / Next.js Pages]
+            B[Gerenciamento de Estado (TanStack Query)]
+        end
+        subgraph "Backend"
+            C[API Routes]
+            D[Autenticação (NextAuth.js)]
+        end
+        subgraph "Camada de Dados"
+            E[Prisma ORM]
+        end
+    end
 
-  %% Legenda dos módulos
-  style User fill:#f9f,stroke:#333,stroke-width:2
-  style Browser fill:#e0e0ff,stroke:#333,stroke-width:2
-  style ReactUI fill:#bbf,stroke:#333,stroke-width:2
-  style TanStack fill:#bfb,stroke:#333,stroke-width:2
-  style Auth fill:#ffd,stroke:#333,stroke-width:2
-  style APIRoute fill:#ffd,stroke:#333,stroke-width:2
-  style Prisma fill:#fcf,stroke:#333,stroke-width:2
-  style DB fill:#eee,stroke:#333,stroke-width:2
-  style Cloudinary fill:#cce,stroke:#333,stroke-width:2
+    subgraph "Serviços Externos"
+        F[(PostgreSQL Database)]
+        G[(Cloudinary - Image Storage)]
+    end
+
+    Browser --> A
+    A --> B
+    B --> C
+    A --> D
+    D --> C
+    C --> E
+    E --> F
+    E --> G
+
+    classDef client fill:#cde4ff,stroke:#333,stroke-width:2px;
+    classDef server fill:#e2f0d9,stroke:#333,stroke-width:2px;
+    classDef external fill:#fff2cc,stroke:#333,stroke-width:2px;
+
+    class Browser client;
+    class A,B server;
+    class C,D server;
+    class E server;
+    class F,G external;
 ```
 
-### Legenda do Fluxo (Passo a Passo)
-
-1. **Usuário**: Interage com a aplicação (cliques, digitação, envio de formulários).
-2. **Browser**: Renderiza a interface React.
-3. **React UI**: Solicita dados via TanStack Query ou autenticação via NextAuth.js.
-4. **TanStack Query**: Realiza requisições para API REST.
-5. **NextAuth.js**: Gerencia login, sessão e autenticação.
-6. **API Route**: Recebe requisições do frontend, executa lógica de negócio.
-7. **Prisma ORM**: Traduz requisições em comandos SQL para o banco de dados.
-8. **Prisma ORM**: Busca URLs de imagens no Cloudinary quando necessário.
-9. **Banco de Dados**: Retorna dados solicitados para o Prisma.
-10. **Cloudinary**: Retorna URLs das imagens dos produtos.
-11. **Prisma ORM**: Valida dados e retorna para a API.
-12. **API Route**: Responde ao frontend com dados em formato JSON.
-13. **TanStack Query**: Atualiza cache local e repassa dados para a UI.
-14. **React UI**: Atualiza a tela do usuário instantaneamente.
-
-### Dicas para Estudantes
-
-- Cada etapa é separada para facilitar manutenção e testes.
-- O uso de cache (TanStack Query) evita requisições desnecessárias.
-- O backend (API + ORM) garante segurança e integridade dos dados.
-- O fluxo é assíncrono: cada etapa só avança quando a anterior termina.
+| Camada                                | Tecnologia Principal | Responsabilidade                                                                             |
+| :------------------------------------ | :------------------- | :------------------------------------------------------------------------------------------- |
+| **Interface (UI)**                    | React / Next.js      | Renderizar a interface do usuário, gerenciar a navegação e interações.                       |
+| **Gerenciamento de Dados (Frontend)** | TanStack Query       | Orquestrar a busca de dados (fetching), cache e atualizações assíncronas.                    |
+| **Backend (API)**                     | Next.js API Routes   | Servir como o ponto de entrada para todas as requisições, contendo a lógica de negócio.      |
+| **Autenticação**                      | NextAuth.js          | Gerenciar sessões de usuário, login, registro e controle de acesso (roles).                  |
+| **Acesso ao Banco de Dados (ORM)**    | Prisma               | Fornecer uma interface segura e de tipagem forte para comunicar com o banco de dados.        |
+| **Banco de Dados**                    | PostgreSQL           | Armazenar de forma persistente todos os dados da aplicação (usuários, produtos, pedidos).    |
+| **Armazenamento de Mídia**            | Cloudinary           | Hospedar, otimizar e entregar as imagens dos produtos.                                       |
+| **Testes End-to-End**                 | Playwright           | Simular o comportamento do usuário para garantir que todos os fluxos funcionem corretamente. |
 
 ---
 
-## 4. Authentication Flow (Login)
+## 2. Banco de Dados: Entidades e Relacionamentos (ERD)
 
-```mermaid
-flowchart TD
-  A[User] --> B[Login Form]
-  B --> C[signIn]
-  C --> D[NextAuth]
-  D --> E[Prisma]
-  E --> F[PostgreSQL]
-  F --> E
-  E --> D
-  D -->|Valid?| D2{User Valid?}
-  D2 -- Yes --> G[Set Session]
-  D2 -- No --> H[Error]
-  G --> I[Session Stored]
-  I --> J[Redirected]
-  H --> B
-```
-
-**Step-by-step Explanation:**
-
-1. User fills out the login form and submits.
-2. The form calls `signIn('credentials')` from NextAuth.js.
-3. NextAuth.js API route receives the credentials and uses Prisma to check the database.
-4. If the user is valid, a session cookie is set and the user is redirected to the app.
-5. If invalid, an error is shown in the UI.
-
-**Key Points for Students:**
-
-- NextAuth.js abstracts away most session/cookie logic.
-- Prisma ensures secure, type-safe DB access.
-
----
-
-erDiagram
-
-## 5. Database: Entities & Relationships (ERD)
+O diagrama abaixo (ERD) modela a estrutura do nosso banco de dados. Cada "caixa" é uma tabela e as linhas representam como elas se conectam.
 
 ```mermaid
 erDiagram
-  User {
-    int id
-    string email
-    string password
-    string name
-  }
-  Address {
-    int id
-    int userId
-    string street
-    string city
-  }
-  Product {
-    int id
-    string name
-    string description
-    float price
-    string image
-    string category
-    int stock
-    float averageRating
-    int reviewCount
-  }
-  ProductImage {
-    int id
-    int productId
-    string url
-    string altText
-    int order
-  }
-  Order {
-    int id
-    int userId
-    string status
-  }
-  OrderItem {
-    int id
-    int orderId
-    int productId
-    int quantity
-  }
-  CartItem {
-    int id
-    int userId
-    int productId
-    int quantity
-  }
-  User ||--o{ Order : places
-  User ||--o{ Address : has
-  Order ||--|{ OrderItem : contains
-  Product ||--o{ OrderItem : in
-  Product ||--o{ CartItem : in
-  User ||--o{ CartItem : has
-  Product ||--o{ ProductImage : has
+    User {
+        string id PK
+        string email UK "Unique"
+        string name
+        string password
+        UserRole role "CUSTOMER, ADMIN, SUPER_ADMIN"
+    }
+    Address {
+        string id PK
+        string userId FK
+        string street
+        string city
+        string zipCode
+        bool isDefault
+    }
+    Product {
+        string id PK
+        string name
+        string description
+        float price
+        string image "URL da imagem principal"
+        string category
+        int stock
+        float averageRating
+    }
+    ProductImage {
+        string id PK
+        string productId FK
+        string url "URL da imagem adicional"
+        int order "Ordem de exibição"
+    }
+    Review {
+        string id PK
+        string productId FK
+        string userId FK
+        int rating "1 a 5"
+        string comment
+    }
+    Order {
+        string id PK
+        string userId FK
+        string status "PENDING, COMPLETED, CANCELED"
+        float total
+    }
+    OrderItem {
+        string id PK
+        string orderId FK
+        string productId FK
+        int quantity
+        float price "Preço no momento da compra"
+    }
+    CartItem {
+        string id PK
+        string userId FK
+        string productId FK
+        int quantity
+    }
+
+    User ||--o{ Address : "possui"
+    User ||--o{ Order : "realiza"
+    User ||--o{ Review : "escreve"
+    User ||--o{ CartItem : "tem no carrinho"
+    Product ||--o{ ProductImage : "tem imagens"
+    Product ||--o{ Review : "recebe"
+    Product ||--o{ OrderItem : "está em"
+    Product ||--o{ CartItem : "está em"
+    Order ||--|{ OrderItem : "contém"
 ```
 
-**Entity Relationship Explanation:**
+### Explicação das Entidades para Estudantes:
 
-- **User**: Can have many orders, addresses, and cart items.
-- **Order**: Belongs to a user, contains many order items.
-- **OrderItem**: Connects orders and products, tracks quantity.
-- **CartItem**: Tracks products in a user's cart.
-- **Address**: Stores user shipping/billing addresses.
-- **Product**: Can be in many order items and cart items. Possui os campos:
-
-  - `name`: nome do produto
-  - `description`: descrição detalhada
-  - `price`: preço
-  - `image`: URL da imagem principal (armazenada no Cloudinary)
-  - `category`: categoria
-  - `stock`: quantidade em estoque
-  - `averageRating`: média das avaliações dos usuários
-  - `reviewCount`: número total de avaliações
-
-- **ProductImage**: Permite múltiplas imagens por produto (galeria). Campos:
-  - `url`: endereço da imagem na nuvem
-  - `altText`: texto alternativo para acessibilidade
-  - `order`: ordem de exibição na galeria
-
-**Para estudantes:**
-
-- O diagrama agora mostra todos os campos essenciais do produto, incluindo campos de avaliação e galeria de imagens, tornando o modelo mais próximo do que é usado em projetos reais.
-- Sempre confira se os campos do diagrama refletem o que é usado no código, na interface do usuário e nas funcionalidades avançadas (como avaliações e galeria).
-
-### Serviço de Imagens: Cloudinary
-
-No projeto, as imagens dos produtos não são armazenadas diretamente no banco de dados, mas sim em um serviço externo chamado **Cloudinary**. O campo `image` da entidade Product guarda a URL da imagem hospedada na nuvem.
-
-- **Como funciona:**
-
-  - Quando um administrador faz upload de uma imagem de produto, o arquivo é enviado para o Cloudinary via API.
-  - O Cloudinary armazena a imagem, aplica otimizações (tamanho, qualidade, formato) e retorna uma URL segura.
-  - Essa URL é salva no campo `image` do produto no banco de dados.
-  - O frontend utiliza essa URL para exibir a imagem do produto em todas as páginas (loja, admin, carrinho, etc).
-
-- **Vantagens do Cloudinary:**
-  - Armazenamento escalável e seguro para imagens.
-  - Otimização automática para web (compressão, formatos modernos).
-  - URLs públicas e protegidas para fácil integração.
-  - Permite múltiplas imagens por produto (campo adicional `ProductImage` para galeria, se necessário).
-
-**Para estudantes:**
-
-- O uso de um serviço externo de imagens é uma prática comum em projetos modernos, pois facilita a gestão, otimização e entrega de arquivos estáticos sem sobrecarregar o banco de dados.
-- Sempre que ver um campo `image` ou galeria de imagens, lembre-se que o arquivo está na nuvem e o banco só guarda o link.
+- **User**: Armazena informações de login e o `role` (papel), que define se o usuário é um cliente, administrador ou super administrador.
+- **Address**: Guarda os endereços de um usuário. Um usuário pode ter vários endereços.
+- **Product**: O coração do e-commerce. Contém todos os detalhes do produto, incluindo o `image` (link para a imagem principal no Cloudinary) e `averageRating` (nota média das avaliações).
+- **ProductImage**: Permite que um produto tenha uma galeria de imagens, e não apenas uma.
+- **Review**: Avaliações (nota e comentário) que um `User` faz para um `Product`.
+- **Order**: Representa um pedido feito por um `User`. Contém o status e o valor total.
+- **OrderItem**: Item específico dentro de um `Order`. Ele "congela" o preço do produto no momento da compra.
+- **CartItem**: Representa um item que o usuário adicionou ao carrinho, mas ainda não comprou.
 
 ---
 
-## 6. Testing: Playwright E2E (End-to-End)
+## 3. Fluxo de Dados Detalhado: Adicionar ao Carrinho
 
-**Test Types:**
+Para entender como as tecnologias se conectam, vamos analisar o fluxo de um usuário adicionando um produto ao carrinho.
 
-- Edge cases (invalid login, registration, admin access, etc)
-- Authenticated flows (cart, checkout, etc)
+```mermaid
+sequenceDiagram
+    participant User as Usuário
+    participant Browser as Navegador
+    participant React as React UI
+    participant TQuery as TanStack Query
+    participant API as API Route (/api/cart)
+    participant Prisma as Prisma ORM
+    participant DB as PostgreSQL
 
-**How Playwright Works (Step-by-Step):**
-
-1. **Test script** launches a real browser (Chromium, Firefox, WebKit).
-2. **Simulates user actions**: navigation, clicks, form fills, etc.
-3. **Waits for UI elements** to appear, checks for correct navigation, error messages, and UI state.
-4. **Uses robust selectors and explicit waits** to handle async UI/data.
-5. **Reports pass/fail** for each scenario, with screenshots and logs for failures.
-
-**Example Test:**
-
-```ts
-await page.goto('/login');
-await page.fill('input[name="email"]', 'test@example.com');
-await page.click('button:has-text("Sign in")');
-await expect(page.getByRole('alert')).toBeVisible();
+    User->>Browser: 1. Clica em "Adicionar ao Carrinho"
+    Browser->>React: 2. Dispara evento onClick
+    React->>TQuery: 3. Chama a mutação `useAddToCart()`
+    TQuery->>API: 4. Envia requisição POST com productId e quantity
+    API->>Prisma: 5. Verifica se o produto existe e tem estoque
+    Prisma->>DB: 6. `findUnique({ where: { id: productId } })`
+    DB-->>Prisma: 7. Retorna dados do produto
+    Prisma-->>API: 8. Confirma que há estoque
+    API->>Prisma: 9. Cria ou atualiza o `CartItem`
+    Prisma->>DB: 10. `upsert({ where: ..., create: ..., update: ... })`
+    DB-->>Prisma: 11. Confirma a operação
+    Prisma-->>API: 12. Retorna o item do carrinho atualizado
+    API-->>TQuery: 13. Responde com status 200 (OK) e os dados
+    TQuery->>React: 14. Invalida o cache de 'cart' e atualiza o estado
+    React->>Browser: 15. Re-renderiza a UI (ex: atualiza o ícone do carrinho)
+    Browser->>User: 16. Usuário vê a confirmação visual
 ```
 
-**Testing Flow Diagram:**
+### Dicas para Estudantes:
+
+- **Fluxo Otimista (Optimistic UI)**: Com TanStack Query, poderíamos atualizar a UI _antes_ mesmo da API responder (passo 15 antes do 4). Se a API falhar, o TanStack Query reverte a alteração. Isso torna a experiência do usuário instantânea.
+- **Separação de Responsabilidades**: Note como cada parte tem seu papel. O React cuida da tela, o TanStack Query da comunicação, a API da lógica de negócio e o Prisma/PostgreSQL dos dados.
+- **Segurança**: A API Route é a única que fala com o banco de dados. O frontend nunca tem acesso direto, garantindo a segurança.
+
+---
+
+## 4. Autenticação e Autorização com NextAuth.js
+
+A segurança é crucial. O NextAuth.js gerencia quem pode acessar o quê.
 
 ```mermaid
 flowchart TD
-  A[Playwright Test Script]:::test -->|Launch| B[Browser]
-  B -->|Simulate| C[Next.js App]
-  C -->|API Calls| D[API Routes]
-  D -->|DB Query| E[(PostgreSQL DB)]
-  C -->|UI Response| B
-  B -->|Check| A
+    subgraph "Fluxo de Login"
+        A[Formulário de Login] -- "1. Envia email/senha" --> B[API Route: /api/auth/callback/credentials]
+        B -- "2. Valida com o BD" --> C{Prisma: `findUser`}
+        C -- "Usuário Válido" --> D[NextAuth.js: Cria um JWT (JSON Web Token)]
+        D -- "3. Retorna o token" --> E[Sessão é criada no cookie do browser]
+        C -- "Usuário Inválido" --> F[Retorna erro 401 Unauthorized]
+    end
 
-  classDef test fill:#fdd,stroke:#333,stroke-width:2;
+    subgraph "Acesso a Rota Protegida"
+        G[Browser] -- "4. Requisição para /api/admin/products" --> H[Middleware ou API Route]
+        H -- "5. Verifica o cookie da sessão" --> I{NextAuth.js: `auth()`}
+        I -- "Token válido e role='ADMIN'?" --> J[Acesso Permitido]
+        I -- "Inválido ou sem permissão" --> K[Acesso Negado]
+    end
 ```
 
-**For Students:**
+### Pontos-Chave para Estudantes:
 
-- Playwright tests the entire stack, from UI to backend and database, as a real user would experience it.
-- E2E tests are essential for catching bugs that only appear when all parts of the app work together.
-
----
-
-## 7. How Technologies Integrate
-
-- **Next.js**: The core framework, providing both the frontend (React UI, routing, SSR/SSG) and backend (API routes for business logic and data access) in a single codebase.
-- **TanStack Query**: Handles all data fetching and caching in the frontend, making API calls to Next.js API routes and integrating with React Suspense for smooth loading and error states.
-- **NextAuth.js**: Manages authentication and session, using Prisma to store and validate users in the database. Integrates seamlessly with Next.js API routes.
-- **Prisma**: The ORM layer, providing type-safe access to the PostgreSQL database for both business logic (API routes) and authentication (NextAuth.js).
-- **Playwright**: Runs end-to-end tests, simulating real user flows and verifying that the entire stack (UI, API, DB) works as expected.
-
-**Comprehensive Integration Flow:**
-
-1. User interacts with the React UI (Next.js frontend).
-2. UI uses TanStack Query to fetch/mutate data via API routes.
-3. API routes use Prisma to read/write data in PostgreSQL.
-4. NextAuth.js handles login/session, also using Prisma.
-5. Playwright tests simulate all flows, ensuring reliability.
+- **JWT (JSON Web Token)**: É um "passaporte" digital seguro que o backend gera para o usuário após o login. A cada requisição, o usuário apresenta esse passaporte para provar quem é.
+- **Middleware**: É uma camada que intercepta todas as requisições antes de chegarem à API. É o local ideal para verificar se o usuário está logado e se tem permissão para acessar um recurso.
+- **Roles (Papéis)**: O `enum UserRole` no `schema.prisma` é a base da autorização. Rotas de administrador verificam se `session.user.role` é `ADMIN` ou `SUPER_ADMIN`.
 
 ---
 
-## 8. Fullstack Architecture Diagram (Annotated)
+## 5. Testes End-to-End com Playwright
 
-```mermaid
-flowchart TD
-  U[User] --> Browser
-  Browser --> React
-  React --> Query
-  Query --> API
-  React --> Auth
-  Auth --> API
-  API --> Prisma
-  Prisma --> DB
-  DB --> Prisma
-  Prisma --> API
-  API --> Query
-  Query --> React
-  React --> Browser
+Testes garantem que a aplicação funcione como esperado do ponto de vista do usuário.
+
+**O que o Playwright faz?**
+Ele abre um navegador real (invisível), executa uma série de ações (como se fosse um usuário) e verifica se os resultados na tela são os esperados.
+
+**Exemplo de Teste: Login com Falha**
+Este teste verifica se uma mensagem de erro aparece ao tentar logar com credenciais inválidas.
+
+```typescript
+// tests/auth.spec.ts
+
+import { test, expect } from '@playwright/test';
+
+test('should display error message on failed login', async ({ page }) => {
+  // 1. Navega para a página de login
+  await page.goto('/login');
+
+  // 2. Preenche o formulário com dados inválidos
+  await page.fill('input[name="email"]', 'wrong@example.com');
+  await page.fill('input[name="password"]', 'wrongpassword');
+
+  // 3. Clica no botão de login
+  await page.click('button:has-text("Sign In")');
+
+  // 4. Verifica se a mensagem de erro está visível
+  const errorMessage = page.getByRole('alert');
+  await expect(errorMessage).toBeVisible();
+  await expect(errorMessage).toContainText('Invalid credentials');
+});
 ```
 
-**Detailed Explanation for Students:**
+### Dicas para Estudantes:
 
-- **User**: Interacts with the app via the browser (clicks, types, submits forms).
-- **Browser**: Renders the React UI, receives updates from the app.
-- **React Components**: Build the UI, handle user input, and display data.
-- **TanStack Query**: Handles all data fetching, caching, and background updates for the UI.
-- **NextAuth.js**: Manages authentication and session, making sure users are logged in securely.
-- **Next.js API Routes**: The backend logic, handling requests from the frontend and returning data or errors.
-- **Prisma ORM**: Provides a type-safe way to access and validate data in the database.
-- **PostgreSQL**: The relational database where all persistent data is stored.
+- **Por que E2E?**: Testes unitários verificam pequenas partes do código isoladamente. Testes E2E (End-to-End) verificam se todas as partes (frontend, backend, banco de dados) funcionam **juntas**.
+- **Seletores Robustos**: Usar `getByRole('alert')` é melhor do que usar seletores de CSS como `#error-message`, pois testa a acessibilidade e é mais resistente a mudanças de estilo.
 
 ---
 
-## 9. Key Points for Web Coding Students
+## 6. Conclusão: Principais Conceitos para Aprender com Este Projeto
 
-- **Separation of Concerns**: Each technology has a clear role (UI, data, API, DB, auth, testing).
-- **Type Safety & Security**: Prisma and NextAuth.js ensure data is validated and users are authenticated securely.
-- **Modern Data Fetching**: TanStack Query and React Suspense provide a smooth, modern UX for loading and error states.
-- **Fullstack Testing**: Playwright simulates real user flows, ensuring the whole stack works together.
-- **Scalability**: This architecture can grow with your app, supporting more features and users.
-- **Developer Experience**: Next.js, Prisma, and Playwright all provide great DX, with type safety, hot reload, and fast feedback.
-
----
-
-_For more, see the codebase and Playwright test files for real-world examples and practical usage. Diagrams are editable and can be used for presentations or further study._
+1.  **Arquitetura Full-Stack com Next.js**: Entenda os benefícios de ter frontend e backend no mesmo projeto e como o App Router organiza as páginas e APIs.
+2.  **Tipagem Forte de Ponta a Ponta**: TypeScript no frontend, backend e com o Prisma garante menos bugs e um desenvolvimento mais seguro.
+3.  **Abstração do Banco de Dados com ORM**: O Prisma permite que você trabalhe com o banco de dados usando objetos TypeScript, sem precisar escrever SQL manualmente na maior parte do tempo.
+4.  **Gerenciamento de Estado Moderno**: TanStack Query simplifica a lógica de loading, erros e cache, tornando a UI mais reativa e eficiente.
+5.  **Autenticação Baseada em Tokens**: Aprenda como o NextAuth.js facilita a implementação de um sistema de autenticação seguro e escalável.
+6.  **Importância dos Testes Automatizados**: Veja como os testes E2E com Playwright dão confiança para fazer alterações no código sem quebrar funcionalidades existentes.
+7.  **Uso de Serviços Externos**: Entenda por que delegar tarefas como armazenamento de imagens (Cloudinary) é uma prática recomendada em aplicações web.
