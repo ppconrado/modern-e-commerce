@@ -53,16 +53,16 @@ graph TD
     class F,G external;
 ```
 
-| Camada | Tecnologia Principal | Responsabilidade |
-| :--- | :--- | :--- |
-| **Interface (UI)** | React / Next.js | Renderizar a interface do usuário, gerenciar a navegação e interações. |
-| **Gerenciamento de Dados (Frontend)** | TanStack Query | Orquestrar a busca de dados (fetching), cache e atualizações assíncronas. |
-| **Backend (API)** | Next.js API Routes | Servir como o ponto de entrada para todas as requisições, contendo a lógica de negócio. |
-| **Autenticação** | NextAuth.js | Gerenciar sessões de usuário, login, registro e controle de acesso (roles). |
-| **Acesso ao Banco de Dados (ORM)** | Prisma | Fornecer uma interface segura e de tipagem forte para comunicar com o banco de dados. |
-| **Banco de Dados** | PostgreSQL | Armazenar de forma persistente todos os dados da aplicação (usuários, produtos, pedidos). |
-| **Armazenamento de Mídia** | Cloudinary | Hospedar, otimizar e entregar as imagens dos produtos. |
-| **Testes End-to-End** | Playwright | Simular o comportamento do usuário para garantir que todos os fluxos funcionem corretamente. |
+| Camada                                | Tecnologia Principal | Responsabilidade                                                                             |
+| :------------------------------------ | :------------------- | :------------------------------------------------------------------------------------------- |
+| **Interface (UI)**                    | React / Next.js      | Renderizar a interface do usuário, gerenciar a navegação e interações.                       |
+| **Gerenciamento de Dados (Frontend)** | TanStack Query       | Orquestrar a busca de dados (fetching), cache e atualizações assíncronas.                    |
+| **Backend (API)**                     | Next.js API Routes   | Servir como o ponto de entrada para todas as requisições, contendo a lógica de negócio.      |
+| **Autenticação**                      | NextAuth.js          | Gerenciar sessões de usuário, login, registro e controle de acesso (roles).                  |
+| **Acesso ao Banco de Dados (ORM)**    | Prisma               | Fornecer uma interface segura e de tipagem forte para comunicar com o banco de dados.        |
+| **Banco de Dados**                    | PostgreSQL           | Armazenar de forma persistente todos os dados da aplicação (usuários, produtos, pedidos).    |
+| **Armazenamento de Mídia**            | Cloudinary           | Hospedar, otimizar e entregar as imagens dos produtos.                                       |
+| **Testes End-to-End**                 | Playwright           | Simular o comportamento do usuário para garantir que todos os fluxos funcionem corretamente. |
 
 ---
 
@@ -143,14 +143,14 @@ erDiagram
 
 ### Explicação das Entidades para Estudantes:
 
-*   **User**: Armazena informações de login e o `role` (papel), que define se o usuário é um cliente, administrador ou super administrador.
-*   **Address**: Guarda os endereços de um usuário. Um usuário pode ter vários endereços.
-*   **Product**: O coração do e-commerce. Contém todos os detalhes do produto, incluindo o `image` (link para a imagem principal no Cloudinary) e `averageRating` (nota média das avaliações).
-*   **ProductImage**: Permite que um produto tenha uma galeria de imagens, e não apenas uma.
-*   **Review**: Avaliações (nota e comentário) que um `User` faz para um `Product`.
-*   **Order**: Representa um pedido feito por um `User`. Contém o status e o valor total.
-*   **OrderItem**: Item específico dentro de um `Order`. Ele "congela" o preço do produto no momento da compra.
-*   **CartItem**: Representa um item que o usuário adicionou ao carrinho, mas ainda não comprou.
+- **User**: Armazena informações de login e o `role` (papel), que define se o usuário é um cliente, administrador ou super administrador.
+- **Address**: Guarda os endereços de um usuário. Um usuário pode ter vários endereços.
+- **Product**: O coração do e-commerce. Contém todos os detalhes do produto, incluindo o `image` (link para a imagem principal no Cloudinary) e `averageRating` (nota média das avaliações).
+- **ProductImage**: Permite que um produto tenha uma galeria de imagens, e não apenas uma.
+- **Review**: Avaliações (nota e comentário) que um `User` faz para um `Product`.
+- **Order**: Representa um pedido feito por um `User`. Contém o status e o valor total.
+- **OrderItem**: Item específico dentro de um `Order`. Ele "congela" o preço do produto no momento da compra.
+- **CartItem**: Representa um item que o usuário adicionou ao carrinho, mas ainda não comprou.
 
 ---
 
@@ -188,9 +188,9 @@ sequenceDiagram
 
 ### Dicas para Estudantes:
 
-*   **Fluxo Otimista (Optimistic UI)**: Com TanStack Query, poderíamos atualizar a UI *antes* mesmo da API responder (passo 15 antes do 4). Se a API falhar, o TanStack Query reverte a alteração. Isso torna a experiência do usuário instantânea.
-*   **Separação de Responsabilidades**: Note como cada parte tem seu papel. O React cuida da tela, o TanStack Query da comunicação, a API da lógica de negócio e o Prisma/PostgreSQL dos dados.
-*   **Segurança**: A API Route é a única que fala com o banco de dados. O frontend nunca tem acesso direto, garantindo a segurança.
+- **Fluxo Otimista (Optimistic UI)**: Com TanStack Query, poderíamos atualizar a UI _antes_ mesmo da API responder (passo 15 antes do 4). Se a API falhar, o TanStack Query reverte a alteração. Isso torna a experiência do usuário instantânea.
+- **Separação de Responsabilidades**: Note como cada parte tem seu papel. O React cuida da tela, o TanStack Query da comunicação, a API da lógica de negócio e o Prisma/PostgreSQL dos dados.
+- **Segurança**: A API Route é a única que fala com o banco de dados. O frontend nunca tem acesso direto, garantindo a segurança.
 
 ---
 
@@ -218,9 +218,9 @@ flowchart TD
 
 ### Pontos-Chave para Estudantes:
 
-*   **JWT (JSON Web Token)**: É um "passaporte" digital seguro que o backend gera para o usuário após o login. A cada requisição, o usuário apresenta esse passaporte para provar quem é.
-*   **Middleware**: É uma camada que intercepta todas as requisições antes de chegarem à API. É o local ideal para verificar se o usuário está logado e se tem permissão para acessar um recurso.
-*   **Roles (Papéis)**: O `enum UserRole` no `schema.prisma` é a base da autorização. Rotas de administrador verificam se `session.user.role` é `ADMIN` ou `SUPER_ADMIN`.
+- **JWT (JSON Web Token)**: É um "passaporte" digital seguro que o backend gera para o usuário após o login. A cada requisição, o usuário apresenta esse passaporte para provar quem é.
+- **Middleware**: É uma camada que intercepta todas as requisições antes de chegarem à API. É o local ideal para verificar se o usuário está logado e se tem permissão para acessar um recurso.
+- **Roles (Papéis)**: O `enum UserRole` no `schema.prisma` é a base da autorização. Rotas de administrador verificam se `session.user.role` é `ADMIN` ou `SUPER_ADMIN`.
 
 ---
 
@@ -259,8 +259,8 @@ test('should display error message on failed login', async ({ page }) => {
 
 ### Dicas para Estudantes:
 
-*   **Por que E2E?**: Testes unitários verificam pequenas partes do código isoladamente. Testes E2E (End-to-End) verificam se todas as partes (frontend, backend, banco de dados) funcionam **juntas**.
-*   **Seletores Robustos**: Usar `getByRole('alert')` é melhor do que usar seletores de CSS como `#error-message`, pois testa a acessibilidade e é mais resistente a mudanças de estilo.
+- **Por que E2E?**: Testes unitários verificam pequenas partes do código isoladamente. Testes E2E (End-to-End) verificam se todas as partes (frontend, backend, banco de dados) funcionam **juntas**.
+- **Seletores Robustos**: Usar `getByRole('alert')` é melhor do que usar seletores de CSS como `#error-message`, pois testa a acessibilidade e é mais resistente a mudanças de estilo.
 
 ---
 
