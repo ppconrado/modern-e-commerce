@@ -11,10 +11,11 @@ import { Suspense } from 'react';
 
 <Suspense fallback={<LoadingComponent />}>
   <ComponenteThatLoadsData />
-</Suspense>
+</Suspense>;
 ```
 
 **Fluxo:**
+
 1. React começa a renderizar o componente filho
 2. Se o componente precisar carregar dados (async), ele "suspende"
 3. React mostra o `fallback` enquanto espera
@@ -39,7 +40,7 @@ function ProductGridSkeleton() {
     <div className="space-y-6">
       {/* Skeleton para o título/filtros */}
       <div className="h-10 bg-muted animate-pulse rounded-lg w-full max-w-md" />
-      
+
       {/* Grid de skeletons (6 cards vazios animados) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -60,7 +61,7 @@ export default function HomePage() {
           Discover our curated collection of premium products
         </p>
       </div>
-      
+
       {/* Enquanto ProductGrid carrega dados, mostra ProductGridSkeleton */}
       <Suspense fallback={<ProductGridSkeleton />}>
         <ProductGrid />
@@ -71,6 +72,7 @@ export default function HomePage() {
 ```
 
 **O que acontece:**
+
 - Usuário acessa a página
 - Título e descrição aparecem **imediatamente**
 - `ProductGridSkeleton` mostra 6 cards animados (pulse)
@@ -95,13 +97,13 @@ export default function ProductPage() {
           <div className="grid md:grid-cols-2 gap-8 animate-pulse">
             {/* Skeleton da imagem */}
             <div className="aspect-square bg-muted rounded-lg" />
-            
+
             {/* Skeleton dos detalhes */}
             <div className="space-y-4">
-              <div className="h-8 bg-muted rounded w-3/4" />      {/* Título */}
-              <div className="h-6 bg-muted rounded w-1/4" />      {/* Preço */}
-              <div className="h-20 bg-muted rounded" />           {/* Descrição */}
-              <div className="h-10 bg-muted rounded w-full" />   {/* Botão */}
+              <div className="h-8 bg-muted rounded w-3/4" /> {/* Título */}
+              <div className="h-6 bg-muted rounded w-1/4" /> {/* Preço */}
+              <div className="h-20 bg-muted rounded" /> {/* Descrição */}
+              <div className="h-10 bg-muted rounded w-full" /> {/* Botão */}
             </div>
           </div>
         </div>
@@ -114,6 +116,7 @@ export default function ProductPage() {
 ```
 
 **O que acontece:**
+
 - Usuário clica em um produto
 - Skeleton aparece **instantaneamente** com o layout exato da página final
 - Enquanto busca o produto no banco (usando o `id` da URL)
@@ -128,15 +131,18 @@ export default function ProductPage() {
 
 ```tsx
 // ❌ SEM Suspense - Tela em branco ou loading genérico
-{isLoading ? <Spinner /> : <ProductGrid products={data} />}
+{
+  isLoading ? <Spinner /> : <ProductGrid products={data} />;
+}
 
 // ✅ COM Suspense - Skeleton que imita o layout final
 <Suspense fallback={<ProductGridSkeleton />}>
   <ProductGrid />
-</Suspense>
+</Suspense>;
 ```
 
 **Vantagens:**
+
 - Usuário vê algo imediatamente (não tela vazia)
 - Skeleton imita o layout final (reduz surpresa visual)
 - Transição suave entre loading e conteúdo
@@ -144,19 +150,20 @@ export default function ProductPage() {
 ### 2. Código Mais Limpo
 
 **Antes (sem Suspense):**
+
 ```tsx
 function ProductList() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     fetchProducts()
       .then(setData)
       .catch(setError)
       .finally(() => setIsLoading(false));
   }, []);
-  
+
   if (isLoading) return <Spinner />;
   if (error) return <Error />;
   return <ProductGrid products={data} />;
@@ -164,6 +171,7 @@ function ProductList() {
 ```
 
 **Depois (com Suspense):**
+
 ```tsx
 async function ProductList() {
   const products = await fetchProducts(); // Suspende automaticamente
@@ -173,10 +181,11 @@ async function ProductList() {
 // Uso:
 <Suspense fallback={<Spinner />}>
   <ProductList />
-</Suspense>
+</Suspense>;
 ```
 
 **Benefícios:**
+
 - Não precisa de estados `isLoading`, `isError` em cada componente
 - Lógica de loading separada da lógica de dados
 - Componentes mais focados em sua responsabilidade principal
@@ -184,11 +193,13 @@ async function ProductList() {
 ### 3. Performance Percebida Melhor
 
 **Psicologia do Usuário:**
+
 - 🧠 Cérebro processa melhor "conteúdo carregando" do que "tela vazia"
 - ⏱️ Sensação de espera reduzida com skeleton animado
 - 👁️ Menos "flash" visual quando conteúdo aparece
 
 **Métricas:**
+
 - **Sem Suspense:** Tela vazia → Flash → Conteúdo (ruim)
 - **Com Suspense:** Skeleton → Transição suave → Conteúdo (bom)
 
@@ -205,6 +216,7 @@ Cliente recebe:
 ```
 
 **Resultado:**
+
 - ✅ Tempo para primeiro conteúdo (FCP) muito menor!
 - ✅ Usuário vê a página progressivamente
 - ✅ Não precisa esperar todos os dados no servidor
@@ -213,25 +225,22 @@ Cliente recebe:
 
 ```tsx
 <div>
-  <Header />  {/* Sempre visível - não bloqueia */}
-  
+  <Header /> {/* Sempre visível - não bloqueia */}
   <Suspense fallback={<UserSkeleton />}>
-    <UserProfile />  {/* Suspende independentemente */}
+    <UserProfile /> {/* Suspende independentemente */}
   </Suspense>
-  
   <Suspense fallback={<ProductsSkeleton />}>
-    <ProductList />  {/* Suspende independentemente */}
+    <ProductList /> {/* Suspende independentemente */}
   </Suspense>
-  
   <Suspense fallback={<ReviewsSkeleton />}>
-    <RecentReviews />  {/* Suspende independentemente */}
+    <RecentReviews /> {/* Suspende independentemente */}
   </Suspense>
-  
-  <Footer />  {/* Sempre visível - não bloqueia */}
+  <Footer /> {/* Sempre visível - não bloqueia */}
 </div>
 ```
 
 **Benefícios:**
+
 - Cada seção carrega independentemente
 - Se `UserProfile` carregar rápido, mostra enquanto resto carrega
 - Não bloqueia a página inteira
@@ -256,6 +265,7 @@ function ProductCardSkeleton() {
 ```
 
 **Dicas para bons skeletons:**
+
 - ✅ Imitar o layout final (mesmo tamanho, posições)
 - ✅ Usar `animate-pulse` do Tailwind para animação
 - ✅ Cores neutras (`bg-muted`, `bg-gray-200`)
@@ -263,6 +273,7 @@ function ProductCardSkeleton() {
 - ✅ Mesma estrutura de grid/flex do componente final
 
 **Exemplo complexo:**
+
 ```tsx
 function DashboardSkeleton() {
   return (
@@ -272,14 +283,14 @@ function DashboardSkeleton() {
         <div className="h-8 bg-muted rounded w-48 animate-pulse" />
         <div className="h-10 bg-muted rounded w-32 animate-pulse" />
       </div>
-      
+
       {/* Stats skeleton */}
       <div className="grid grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-24 bg-muted rounded animate-pulse" />
         ))}
       </div>
-      
+
       {/* Table skeleton */}
       <div className="space-y-2">
         {[1, 2, 3, 4].map((i) => (
@@ -300,7 +311,7 @@ export default function MyPage() {
   return (
     <div>
       <h1>Minha Página</h1>
-      
+
       <Suspense fallback={<ProductCardSkeleton />}>
         <ProductCard id={123} />
       </Suspense>
@@ -319,14 +330,14 @@ No Next.js 15 com Server Components, isso acontece **automaticamente** quando vo
 // Este é um Server Component (padrão no Next.js 15)
 async function ProductCard({ id }: { id: number }) {
   // await faz o componente "suspender" automaticamente
-  const product = await prisma.product.findUnique({ 
-    where: { id } 
+  const product = await prisma.product.findUnique({
+    where: { id },
   });
-  
+
   if (!product) {
     return <div>Produto não encontrado</div>;
   }
-  
+
   return (
     <div>
       <h2>{product.name}</h2>
@@ -338,6 +349,7 @@ async function ProductCard({ id }: { id: number }) {
 ```
 
 **React detecta o `await` e:**
+
 1. Suspende a renderização
 2. Mostra o fallback do Suspense
 3. Quando a Promise resolve, renderiza o conteúdo real
@@ -360,7 +372,7 @@ function ProductList() {
       return res.json();
     },
   });
-  
+
   return (
     <div className="grid grid-cols-3 gap-4">
       {products.map((product) => (
@@ -373,7 +385,7 @@ function ProductList() {
 // Uso:
 <Suspense fallback={<ProductGridSkeleton />}>
   <ProductList />
-</Suspense>
+</Suspense>;
 ```
 
 **Nota:** Use `useSuspenseQuery` (não `useQuery`) para integração com Suspense.
@@ -387,32 +399,34 @@ function ProductList() {
 ```tsx
 <Suspense fallback={<PageSkeleton />}>
   <Header />
-  
+
   <div className="grid grid-cols-2 gap-8">
     <Suspense fallback={<UserSkeleton />}>
       <UserInfo />
     </Suspense>
-    
+
     <Suspense fallback={<StatsSkeleton />}>
       <UserStats />
     </Suspense>
   </div>
-  
+
   <Suspense fallback={<ProductsSkeleton />}>
     <ProductList />
   </Suspense>
-  
+
   <Footer />
 </Suspense>
 ```
 
 **Benefícios:**
+
 - Loading granular (cada seção independente)
 - Se `UserInfo` carregar rápido, mostra enquanto `ProductList` ainda carrega
 - Melhor progressão visual
 - Usuário vê conteúdo conforme fica pronto
 
 **Quando usar:**
+
 - Dashboard com múltiplas seções
 - Página com dados de múltiplas APIs
 - Partes da página com velocidades diferentes
@@ -445,6 +459,7 @@ export default function Page() {
 ```
 
 **Fluxo completo:**
+
 - Loading → `<LoadingSkeleton />`
 - Sucesso → `<DataComponent />`
 - Erro → `<ErrorFallback />`
@@ -453,18 +468,20 @@ export default function Page() {
 
 ```tsx
 <Suspense fallback={<DashboardSkeleton />}>
-  <UserStats />      {/* Carrega em paralelo */}
-  <RecentOrders />   {/* Carrega em paralelo */}
-  <Analytics />      {/* Carrega em paralelo */}
+  <UserStats /> {/* Carrega em paralelo */}
+  <RecentOrders /> {/* Carrega em paralelo */}
+  <Analytics /> {/* Carrega em paralelo */}
 </Suspense>
 ```
 
 **Atenção:**
+
 - ⚠️ Todos os 3 precisam terminar de carregar para substituir o skeleton
 - ⚠️ O componente mais lento bloqueia os outros
 - ✅ Se quiser loading independente, use Suspense separado para cada um
 
 **Exemplo melhor:**
+
 ```tsx
 {/* Cada um carrega independentemente */}
 <Suspense fallback={<UserStatsSkeleton />}>
@@ -491,13 +508,11 @@ const AdminPanel = lazy(() => import('./AdminPanel'));
 
 function Dashboard() {
   const [showChart, setShowChart] = useState(false);
-  
+
   return (
     <div>
-      <button onClick={() => setShowChart(true)}>
-        Mostrar Gráfico
-      </button>
-      
+      <button onClick={() => setShowChart(true)}>Mostrar Gráfico</button>
+
       {showChart && (
         <Suspense fallback={<ChartSkeleton />}>
           <HeavyChart />
@@ -509,6 +524,7 @@ function Dashboard() {
 ```
 
 **Benefícios:**
+
 - Reduz bundle inicial
 - Carrega código sob demanda
 - Melhora performance inicial
@@ -523,25 +539,25 @@ import { useState, useTransition, Suspense } from 'react';
 function ProductSearch() {
   const [query, setQuery] = useState('');
   const [isPending, startTransition] = useTransition();
-  
+
   function handleSearch(e) {
     const newQuery = e.target.value;
-    
+
     // Marca atualização como não-urgente
     startTransition(() => {
       setQuery(newQuery);
     });
   }
-  
+
   return (
     <div>
-      <input 
-        type="text" 
+      <input
+        type="text"
         onChange={handleSearch}
         placeholder="Buscar produtos..."
         className={isPending ? 'opacity-50' : ''}
       />
-      
+
       <Suspense fallback={<ProductsSkeleton />}>
         <ProductResults query={query} />
       </Suspense>
@@ -551,6 +567,7 @@ function ProductSearch() {
 ```
 
 **Benefícios:**
+
 - Input não trava durante busca
 - Mostra indicador de loading (`isPending`)
 - Melhor UX em buscas/filtros
@@ -559,16 +576,16 @@ function ProductSearch() {
 
 ## 📊 Comparação: Com vs Sem Suspense
 
-| Aspecto | Sem Suspense | Com Suspense |
-|---------|--------------|--------------|
-| **Código** | `if (loading) return <Spinner />` | `<Suspense fallback={<Skeleton />}>` |
-| **Estados** | Gerenciar `isLoading`, `isError` manualmente | Suspense gerencia automaticamente |
-| **UX** | Spinner genérico ou tela vazia | Skeleton que imita layout final |
-| **Performance** | Tela vazia até carregar tudo | Streaming progressivo |
-| **Granularidade** | Difícil ter loading por seção | Fácil com Suspense aninhado |
-| **SSR** | Bloqueia toda a página | Streaming HTML progressivo |
-| **Bundle Size** | Todo código no bundle inicial | Lazy loading fácil com `React.lazy` |
-| **Manutenção** | Lógica de loading espalhada | Centralizada nos boundaries |
+| Aspecto           | Sem Suspense                                 | Com Suspense                         |
+| ----------------- | -------------------------------------------- | ------------------------------------ |
+| **Código**        | `if (loading) return <Spinner />`            | `<Suspense fallback={<Skeleton />}>` |
+| **Estados**       | Gerenciar `isLoading`, `isError` manualmente | Suspense gerencia automaticamente    |
+| **UX**            | Spinner genérico ou tela vazia               | Skeleton que imita layout final      |
+| **Performance**   | Tela vazia até carregar tudo                 | Streaming progressivo                |
+| **Granularidade** | Difícil ter loading por seção                | Fácil com Suspense aninhado          |
+| **SSR**           | Bloqueia toda a página                       | Streaming HTML progressivo           |
+| **Bundle Size**   | Todo código no bundle inicial                | Lazy loading fácil com `React.lazy`  |
+| **Manutenção**    | Lógica de loading espalhada                  | Centralizada nos boundaries          |
 
 ---
 
@@ -577,6 +594,7 @@ function ProductSearch() {
 ### ✅ Use Suspense quando:
 
 - **Carregando dados de API/banco de dados**
+
   ```tsx
   <Suspense fallback={<ProductsSkeleton />}>
     <ProductList />
@@ -584,18 +602,21 @@ function ProductSearch() {
   ```
 
 - **Lazy loading de componentes**
+
   ```tsx
   const AdminPanel = lazy(() => import('./AdminPanel'));
   <Suspense fallback={<Spinner />}>
     <AdminPanel />
-  </Suspense>
+  </Suspense>;
   ```
 
 - **Quer melhor UX com skeletons**
+
   - Imitar layout final
   - Reduzir sensação de espera
 
 - **Precisa de streaming SSR**
+
   - Next.js com Server Components
   - Conteúdo progressivo
 
@@ -606,31 +627,34 @@ function ProductSearch() {
 ### ❌ Não use Suspense para:
 
 - **Animações/transições CSS**
+
   ```tsx
   // ❌ Não use Suspense
   <div className="animate-fade-in">...</div>
-  
+
   // ✅ Use CSS ou Framer Motion
   ```
 
 - **Loading de imagens normais**
+
   ```tsx
   // ❌ Não use Suspense
   <Suspense fallback={...}>
     <img src="..." />
   </Suspense>
-  
+
   // ✅ Use loading nativo
   <Image src="..." loading="lazy" />
   ```
 
 - **Estados de formulário**
+
   ```tsx
   // ❌ Não use Suspense
   <Suspense fallback={...}>
     <ContactForm />
   </Suspense>
-  
+
   // ✅ Use React Hook Form ou estado local
   const [isSubmitting, setIsSubmitting] = useState(false);
   ```
@@ -682,6 +706,7 @@ export default function HomePage() {
 ```
 
 **Por que funciona bem:**
+
 - ✅ Título/descrição aparecem imediatamente (não bloqueados)
 - ✅ Skeleton mostra 6 cards (mesmo número que aparecerá)
 - ✅ Grid layout igual ao final
@@ -758,6 +783,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 ```
 
 **Por que funciona bem:**
+
 - ✅ Skeleton imita exatamente o layout final (2 colunas)
 - ✅ Proporções corretas (imagem quadrada, botão cheio)
 - ✅ Usuário vê estrutura antes dos dados
@@ -779,10 +805,10 @@ test('shows fallback while loading', async () => {
       <AsyncComponent />
     </Suspense>
   );
-  
+
   // Verifica que fallback aparece
   expect(screen.getByText('Loading...')).toBeInTheDocument();
-  
+
   // Espera componente carregar
   await waitFor(() => {
     expect(screen.getByText('Content')).toBeInTheDocument();
