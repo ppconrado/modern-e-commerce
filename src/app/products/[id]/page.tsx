@@ -13,6 +13,7 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { StarRating } from '@/components/star-rating';
 import { ProductReviews } from '@/components/product-reviews';
+import { WishlistButton } from '@/components/WishlistButton';
 
 function ProductDetailContent() {
   const params = useParams();
@@ -95,6 +96,9 @@ function ProductDetailContent() {
             className="object-cover"
             priority
           />
+          <div className="absolute top-4 right-4">
+            <WishlistButton productId={product.id} size="lg" />
+          </div>
         </div>
 
         <div className="space-y-6">

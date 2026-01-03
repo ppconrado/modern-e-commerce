@@ -16,6 +16,7 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { StarRating } from './star-rating';
+import { WishlistButton } from './WishlistButton';
 
 interface ProductCardProps {
   product: Product;
@@ -56,6 +57,9 @@ export function ProductCard({ product }: ProductCardProps) {
               fill
               className="object-cover"
             />
+            <div className="absolute top-2 right-2">
+              <WishlistButton productId={product.id} />
+            </div>
           </div>
         </CardHeader>
       </Link>

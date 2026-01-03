@@ -56,6 +56,7 @@ model Product {
     OrderItem     OrderItem[]
     Review        Review[]
     ProductImage  ProductImage[]
+    WishlistItem  WishlistItem[]
 
     @@index([category])
     @@index([averageRating])
@@ -90,16 +91,17 @@ model Review {
 }
 
 model User {
-    id        String    @id @default(cuid())
-    email     String    @unique
-    fullName  String
-    password  String    @default("")
-    role      UserRole  @default(CUSTOMER)
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    Order     Order[]
-    Address   Address[]
-    Review    Review[]
+    id           String        @id @default(cuid())
+    email        String        @unique
+    fullName     String
+    password     String        @default("")
+    role         UserRole      @default(CUSTOMER)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+    Order        Order[]
+    Address      Address[]
+    Review       Review[]
+    WishlistItem WishlistItem[]
 }
 
 model Address {
@@ -129,6 +131,19 @@ model AdminInvite {
     expiresAt DateTime
     usedAt    DateTime?
     createdAt DateTime  @default(now())
+}
+
+model WishlistItem {
+    id        String   @id @default(cuid())
+    userId    String
+    productId String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, productId]) // One product per user in wishlist
+    @@index([userId])
+    @@index([productId])
 }
 
 enum UserRole {

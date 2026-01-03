@@ -1,16 +1,30 @@
 'use client';
 
-import { ShoppingCart, LogOut, User } from 'lucide-react';
+import { ShoppingCart, LogOut, User, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
 import { Button } from './ui/button';
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 export function Header() {
   const [mounted, setMounted] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { data: session } = useSession();
+
+  // Fetch wishlist count
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: async () => {
+      const res = await fetch('/api/wishlist');
+      if (!res.ok) return { items: [] };
+      return res.json();
+    },
+    enabled: !!session,
+  });
+
+  const wishlistCount = wishlistData?.items?.length || 0;
 
   useEffect(() => {
     setMounted(true);
@@ -87,7 +101,18 @@ export function Header() {
               </Link>
             </div>
           )}
-
+          {session && (
+            <Link href="/wishlist" className="relative">
+              <Button variant="outline" size="icon">
+                <Heart className="h-5 w-5" />
+                {mounted && wishlistCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
           <Link href="/cart" className="relative">
             <Button variant="outline" size="icon">
               <ShoppingCart className="h-5 w-5" />
