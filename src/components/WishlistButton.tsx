@@ -149,14 +149,18 @@ export default function WishlistButton({
     <button
       onClick={handleClick}
       disabled={isPending}
-      className={`${sizeClasses[size]} flex items-center justify-center rounded-full transition-all ${
+      className={`${
+        sizeClasses[size]
+      } flex items-center justify-center rounded-full transition-all ${
         isInWishlist
           ? 'bg-red-500 text-white hover:bg-red-600'
           : 'bg-white border-2 border-gray-300 text-gray-600 hover:border-red-500 hover:text-red-500'
       } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
       title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
     >
-      <Heart className={`${iconSizes[size]} ${isInWishlist ? 'fill-current' : ''}`} />
+      <Heart
+        className={`${iconSizes[size]} ${isInWishlist ? 'fill-current' : ''}`}
+      />
     </button>
   );
 }

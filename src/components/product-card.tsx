@@ -16,7 +16,7 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { StarRating } from './star-rating';
-import { WishlistButton } from './WishlistButton';
+import WishlistButton from './WishlistButton';
 
 interface ProductCardProps {
   product: Product;

@@ -97,10 +97,10 @@ export default function WishlistPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Heart className="h-16 w-16 text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Your wishlist is empty</h2>
-            <p className="text-gray-600 mb-6">
-              Save items you love for later
-            </p>
+            <h2 className="text-xl font-semibold mb-2">
+              Your wishlist is empty
+            </h2>
+            <p className="text-gray-600 mb-6">Save items you love for later</p>
             <Link href="/">
               <Button>Continue Shopping</Button>
             </Link>
@@ -135,7 +135,7 @@ export default function WishlistPage() {
                 <p className="text-2xl font-bold text-green-600 mb-3">
                   ${item.product.price.toFixed(2)}
                 </p>
-                
+
                 {item.product.stock > 0 ? (
                   <Link href={`/products/${item.productId}`}>
                     <Button className="w-full" size="sm">
@@ -148,7 +148,7 @@ export default function WishlistPage() {
                     Out of Stock
                   </Button>
                 )}
-                
+
                 <p className="text-xs text-gray-500 mt-2">
                   Added {new Date(item.createdAt).toLocaleDateString()}
                 </p>

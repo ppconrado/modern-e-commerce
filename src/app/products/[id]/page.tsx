@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { StarRating } from '@/components/star-rating';
 import { ProductReviews } from '@/components/product-reviews';
-import { WishlistButton } from '@/components/WishlistButton';
+import WishlistButton from '@/components/WishlistButton';
 
 function ProductDetailContent() {
   const params = useParams();
