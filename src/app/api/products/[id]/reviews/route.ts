@@ -81,7 +81,7 @@ export async function POST(
       );
     }
 
-    // Optional: Check if user purchased this product
+    // Check if user purchased this product
     const hasPurchased = await prisma.orderItem.findFirst({
       where: {
         productId,
@@ -91,6 +91,13 @@ export async function POST(
         },
       },
     });
+
+    if (!hasPurchased) {
+      return NextResponse.json(
+        { error: 'You can only review products you have purchased and received' },
+        { status: 403 }
+      );
+    }
 
     // Create review
     const review = await prisma.review.create({
