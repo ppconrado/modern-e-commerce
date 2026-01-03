@@ -67,59 +67,67 @@ export default function AdminPage() {
           </Card>
         </Link>
 
-        <Card className="opacity-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <ShoppingCart className="h-6 w-6 text-green-600" />
-              Orders
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">View and manage customer orders</p>
-            <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/orders">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <ShoppingCart className="h-6 w-6 text-green-600" />
+                Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">View and manage customer orders</p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="opacity-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Users className="h-6 w-6 text-purple-600" />
-              Users
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">Manage user accounts and roles</p>
-            <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-          </CardContent>
-        </Card>
+        {session?.user?.role === 'SUPER_ADMIN' && (
+          <Link href="/admin/users">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Users className="h-6 w-6 text-purple-600" />
+                  Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Manage user accounts and roles</p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
-        <Card className="opacity-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <BarChart3 className="h-6 w-6 text-orange-600" />
-              Analytics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">View sales and performance metrics</p>
-            <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/analytics">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <BarChart3 className="h-6 w-6 text-orange-600" />
+                Analytics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                View sales and performance metrics
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
 
-        <Card className="opacity-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Settings className="h-6 w-6 text-gray-600" />
-              Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">
-              Configure store settings and preferences
-            </p>
-            <p className="text-sm text-gray-500 mt-2">Coming soon...</p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/settings">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Settings className="h-6 w-6 text-gray-600" />
+                Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Configure store settings and preferences
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="mt-8">
