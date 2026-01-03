@@ -44,16 +44,23 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('=== REVIEW POST ENDPOINT CALLED ===');
   try {
     const session = await auth();
 
     if (!session?.user?.id) {
+      console.log('No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('Session user ID:', session.user.id);
 
     const { id: productId } = await params;
     const body = await req.json();
     const validatedData = reviewSchema.parse(body);
+
+    console.log('Product ID:', productId);
+    console.log('Review data:', validatedData);
 
     // Check if product exists
     const product = await prisma.product.findUnique({
@@ -81,23 +88,49 @@ export async function POST(
       );
     }
 
-    // Check if user purchased this product
-    const hasPurchased = await prisma.orderItem.findFirst({
+    // CRITICAL: Check if user purchased and received this product
+    console.log('=== CHECKING PURCHASE VERIFICATION ===');
+    console.log('User ID:', session.user.id);
+    console.log('Product ID:', productId);
+
+    // Get all delivered orders for this user
+    const userDeliveredOrders = await prisma.order.findMany({
       where: {
-        productId,
-        Order: {
-          userId: session.user.id,
-          status: 'DELIVERED',
+        userId: session.user.id,
+        status: 'DELIVERED',
+      },
+      include: {
+        OrderItem: {
+          where: {
+            productId: productId,
+          },
         },
       },
     });
 
-    if (!hasPurchased) {
+    console.log(
+      'User delivered orders:',
+      JSON.stringify(userDeliveredOrders, null, 2)
+    );
+
+    // Check if any delivered order contains this product
+    const hasPurchasedProduct = userDeliveredOrders.some(
+      (order) => order.OrderItem.length > 0
+    );
+
+    console.log('Has purchased this product:', hasPurchasedProduct);
+
+    if (!hasPurchasedProduct) {
+      console.log('BLOCKING REVIEW - User has not purchased this product');
       return NextResponse.json(
-        { error: 'You can only review products you have purchased and received' },
+        {
+          error: 'You can only review products you have purchased and received',
+        },
         { status: 403 }
       );
     }
+
+    console.log('ALLOWING REVIEW - User has purchased this product');
 
     // Create review
     const review = await prisma.review.create({
@@ -138,7 +171,7 @@ export async function POST(
     return NextResponse.json(
       {
         review,
-        verified: !!hasPurchased,
+        verified: true, // Always true since we require purchase
       },
       { status: 201 }
     );

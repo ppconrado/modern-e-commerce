@@ -35,10 +35,37 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [checkingPurchase, setCheckingPurchase] = useState(false);
 
   useEffect(() => {
     fetchReviews();
-  }, [productId]);
+    if (session?.user?.id) {
+      checkIfPurchased();
+    }
+  }, [productId, session]);
+
+  const checkIfPurchased = async () => {
+    setCheckingPurchase(true);
+    try {
+      const response = await fetch('/api/orders');
+      if (!response.ok) throw new Error('Failed to check purchase');
+      const data = await response.json();
+
+      // Check if user has any DELIVERED order with this product
+      const purchased = data.orders.some(
+        (order: any) =>
+          order.status === 'DELIVERED' &&
+          order.OrderItem.some((item: any) => item.productId === productId)
+      );
+
+      setHasPurchased(purchased);
+    } catch (error) {
+      console.error('Error checking purchase:', error);
+    } finally {
+      setCheckingPurchase(false);
+    }
+  };
 
   const fetchReviews = async () => {
     try {
@@ -140,7 +167,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   };
 
   const userReview = reviews.find((r) => r.userId === session?.user?.id);
-  const canReview = session && !userReview && !showForm;
+  const canReview = session && !userReview && !showForm && hasPurchased;
 
   if (loading) {
     return (
@@ -165,6 +192,12 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               <Star className="h-4 w-4 mr-2" />
               Write a Review
             </Button>
+          )}
+          {session && !userReview && !hasPurchased && !checkingPurchase && (
+            <div className="text-sm text-gray-500 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Purchase this product to leave a review
+            </div>
           )}
         </div>
       </CardHeader>
