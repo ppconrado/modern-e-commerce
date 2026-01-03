@@ -166,6 +166,7 @@ This project uses **NextAuth.js v5** (beta) for authentication with credentials-
 ### Test Email Service (Production)
 
 **Setup:**
+
 ```bash
 # 1. Create account at resend.com (free tier: 100 emails/day)
 # 2. Get API key from dashboard
@@ -177,6 +178,7 @@ EMAIL_FROM="noreply@yourdomain.com"
 ```
 
 **Testing:**
+
 1. Create admin invite → Real email sent
 2. Deactivate user → Real email sent
 3. Reactivate user → Real email sent
@@ -508,7 +510,7 @@ List all users with statistics (SUPER_ADMIN only).
     "role": "SUPER_ADMIN",
     "isActive": true,
     "createdAt": "2024-01-15T10:00:00Z",
-    "totalSpent": 1250.00,
+    "totalSpent": 1250.0,
     "orderCount": 5,
     "reviewCount": 3,
     "addressCount": 2
@@ -524,8 +526,8 @@ Update user role or activation status (SUPER_ADMIN only).
 
 ```json
 {
-  "role": "ADMIN",        // Optional
-  "isActive": false       // Optional
+  "role": "ADMIN", // Optional
+  "isActive": false // Optional
 }
 ```
 
@@ -543,6 +545,7 @@ Update user role or activation status (SUPER_ADMIN only).
 ```
 
 **Features:**
+
 - Sends email notification on status change
 - Prevents deactivating your own account
 - Validates user exists

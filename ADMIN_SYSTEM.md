@@ -135,6 +135,7 @@ INVITEE:
 The `/admin/users` page displays comprehensive user information:
 
 **User Table Columns:**
+
 - 📧 **Email** - User's email address
 - 👤 **Full Name** - User's display name
 - 🎭 **Role** - Badge showing CUSTOMER/ADMIN/SUPER_ADMIN
@@ -149,6 +150,7 @@ The `/admin/users` page displays comprehensive user information:
 ### User Activation/Deactivation (SUPER_ADMIN Only)
 
 **Features:**
+
 - ✅ Deactivate user accounts (soft delete - preserves data)
 - ✅ Reactivate previously deactivated accounts
 - ✅ Cannot deactivate your own account
@@ -157,6 +159,7 @@ The `/admin/users` page displays comprehensive user information:
 - ✅ Visual status indicators (green/red badges)
 
 **What happens when deactivating:**
+
 1. User's `isActive` field set to `false` (soft delete)
 2. User cannot login anymore
 3. All user data preserved (orders, reviews, addresses)
@@ -164,6 +167,7 @@ The `/admin/users` page displays comprehensive user information:
 5. Status badge turns red in admin panel
 
 **What happens when reactivating:**
+
 1. User's `isActive` field set to `true`
 2. User can login again with same credentials
 3. **Email notification sent** with sign-in link
@@ -178,6 +182,7 @@ The system uses **Resend** for professional email notifications:
 **Configuration Modes:**
 
 1. **Development Mode** (No API Key)
+
    - Emails logged to console
    - Perfect for testing without email accounts
    - View email content in terminal
@@ -192,8 +197,10 @@ The system uses **Resend** for professional email notifications:
 ### Email Templates Implemented
 
 #### 1. Admin Invitation Email
+
 **Sent when:** SUPER_ADMIN creates new admin invite  
 **Contains:**
+
 - Welcome message
 - Invite link with token
 - Role information (ADMIN or SUPER_ADMIN)
@@ -201,16 +208,20 @@ The system uses **Resend** for professional email notifications:
 - Professional HTML template
 
 #### 2. Account Deactivation Email
+
 **Sent when:** SUPER_ADMIN deactivates user account  
 **Contains:**
+
 - Account status notification
 - Reason explanation
 - Support contact information
 - Professional HTML template
 
 #### 3. Account Reactivation Email
+
 **Sent when:** SUPER_ADMIN reactivates user account  
 **Contains:**
+
 - Welcome back message
 - Direct sign-in link
 - Account reactivation confirmation
@@ -219,6 +230,7 @@ The system uses **Resend** for professional email notifications:
 ### How to Test Email Service
 
 **Development Testing (Console):**
+
 ```bash
 # Make sure RESEND_API_KEY is NOT set in .env
 # Emails will appear in terminal console
@@ -231,6 +243,7 @@ npm run dev
 ```
 
 **Production Setup:**
+
 ```bash
 # 1. Create Resend account at resend.com
 # 2. Get API key from dashboard
@@ -436,7 +449,7 @@ docker exec -it ecommerce-postgres psql -U postgres -d ecommerce_db -c 'DELETE F
     "role": "SUPER_ADMIN",
     "isActive": true,
     "createdAt": "2024-12-01T...",
-    "totalSpent": 1250.00,
+    "totalSpent": 1250.0,
     "orderCount": 5,
     "reviewCount": 3,
     "addressCount": 2
@@ -451,8 +464,8 @@ docker exec -it ecommerce-postgres psql -U postgres -d ecommerce_db -c 'DELETE F
 
 ```json
 {
-  "role": "ADMIN",           // Optional: Update user role
-  "isActive": false          // Optional: Activate/Deactivate user
+  "role": "ADMIN", // Optional: Update user role
+  "isActive": false // Optional: Activate/Deactivate user
 }
 ```
 
@@ -470,6 +483,7 @@ docker exec -it ecommerce-postgres psql -U postgres -d ecommerce_db -c 'DELETE F
 ```
 
 **Features:**
+
 - Prevents deactivating your own account
 - Sends email notification on status change
 - Updates role if provided
