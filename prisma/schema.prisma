@@ -96,6 +96,7 @@ model User {
     fullName     String
     password     String         @default("")
     role         UserRole       @default(CUSTOMER)
+    isActive     Boolean        @default(true) // For soft delete/deactivation
     createdAt    DateTime       @default(now())
     updatedAt    DateTime       @updatedAt
     Order        Order[]

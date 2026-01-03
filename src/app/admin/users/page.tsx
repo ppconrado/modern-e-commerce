@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,7 +11,12 @@ type User = {
   email: string;
   fullName: string;
   role: string;
+  isActive: boolean;
   createdAt: string;
+  totalSpent: number;
+  orderCount: number;
+  reviewCount: number;
+  addressCount: number;
 };
 
 type Invite = {
@@ -23,6 +29,7 @@ type Invite = {
 };
 
 export default function UsersPage() {
+  const { data: session } = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [inviteEmail, setInviteEmail] = useState('');
@@ -32,14 +39,16 @@ export default function UsersPage() {
   const [inviteLink, setInviteLink] = useState('');
 
   // Fetch users
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
       const res = await fetch('/api/admin/users');
       if (!res.ok) throw new Error('Failed to fetch users');
-      return res.json() as Promise<User[]>;
+      return res.json() as Promise<{ users: User[] }>;
     },
   });
+
+  const users = usersData?.users || [];
 
   // Fetch invites
   const { data: invites, isLoading: invitesLoading } = useQuery({
@@ -68,7 +77,8 @@ export default function UsersPage() {
     onSuccess: (data) => {
       toast({
         title: 'Invite created!',
-        description: 'Copy the link below to send to the new admin.',
+        description:
+          'Invitation email has been sent. Link copied below for backup.',
       });
       setInviteLink(data.inviteLink);
       setInviteEmail('');
@@ -83,9 +93,52 @@ export default function UsersPage() {
     },
   });
 
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      isActive,
+    }: {
+      userId: string;
+      isActive: boolean;
+    }) => {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update user status');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({
+        title: 'Success',
+        description:
+          'User status updated successfully. Email notification sent.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleCreateInvite = (e: React.FormEvent) => {
     e.preventDefault();
     createInviteMutation.mutate();
+  };
+
+  const handleToggleUserStatus = (userId: string, currentStatus: boolean) => {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+      toggleUserStatusMutation.mutate({ userId, isActive: !currentStatus });
+    }
   };
 
   const copyToClipboard = () => {
@@ -140,7 +193,7 @@ export default function UsersPage() {
         {inviteLink && (
           <div className="mt-4 p-4 bg-blue-50 rounded-md">
             <p className="text-sm font-medium mb-2">
-              Invite Link (expires in 7 days):
+              ✅ Invitation email sent! Link (expires in 7 days):
             </p>
             <div className="flex gap-2">
               <input
@@ -154,7 +207,8 @@ export default function UsersPage() {
               </Button>
             </div>
             <p className="text-xs text-gray-600 mt-2">
-              ⚠️ In production, this would be sent via email automatically.
+              💡 The invitation was sent to {inviteEmail}. You can also copy the
+              link above for manual sharing.
             </p>
           </div>
         )}
@@ -173,7 +227,14 @@ export default function UsersPage() {
                   <th className="text-left py-3 px-4">Email</th>
                   <th className="text-left py-3 px-4">Full Name</th>
                   <th className="text-left py-3 px-4">Role</th>
+                  <th className="text-left py-3 px-4">Status</th>
+                  <th className="text-right py-3 px-4">Orders</th>
+                  <th className="text-right py-3 px-4">Total Spent</th>
+                  <th className="text-right py-3 px-4">Reviews</th>
                   <th className="text-left py-3 px-4">Created</th>
+                  {session?.user?.role === 'SUPER_ADMIN' && (
+                    <th className="text-center py-3 px-4">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -194,9 +255,47 @@ export default function UsersPage() {
                         {user.role}
                       </span>
                     </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          user.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="font-medium">{user.orderCount}</span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="font-semibold text-green-600">
+                        ${user.totalSpent.toFixed(2)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span>{user.reviewCount}</span>
+                    </td>
                     <td className="py-3 px-4 text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
+                    {session?.user?.role === 'SUPER_ADMIN' && (
+                      <td className="py-3 px-4 text-center">
+                        {user.id !== session.user.id && (
+                          <Button
+                            size="sm"
+                            variant={user.isActive ? 'destructive' : 'default'}
+                            onClick={() =>
+                              handleToggleUserStatus(user.id, user.isActive)
+                            }
+                            disabled={toggleUserStatusMutation.isPending}
+                          >
+                            {user.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
