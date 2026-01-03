@@ -13,6 +13,8 @@ This project uses **NextAuth.js v5** (beta) for authentication with credentials-
 - ✅ Secure password hashing using bcryptjs (10 rounds)
 - ✅ JWT-based session management
 - ✅ Role-based access control (CUSTOMER/ADMIN/SUPER_ADMIN)
+- ✅ **User account activation/deactivation** (soft delete)
+- ✅ **Active user validation** on login
 
 ### 2. Professional Admin System
 
@@ -43,6 +45,18 @@ This project uses **NextAuth.js v5** (beta) for authentication with credentials-
 - ✅ User name display and sign out button (when logged in)
 - ✅ Admin link in header (ADMIN + SUPER_ADMIN)
 - ✅ Users link in header (SUPER_ADMIN only)
+- ✅ **User statistics table** (orders, spending, reviews)
+- ✅ **Activate/Deactivate buttons** (SUPER_ADMIN only)
+- ✅ **Status badges** (Active/Inactive)
+
+### 5. Email Notifications
+
+- ✅ **Admin invitation emails** (HTML template with invite link)
+- ✅ **Account deactivation emails** (notification to user)
+- ✅ **Account reactivation emails** (welcome back with sign-in link)
+- ✅ **Resend integration** (production-ready)
+- ✅ **Console logging mode** (development testing)
+- ✅ **Professional HTML templates** (responsive, inline CSS)
 
 ## Test Credentials
 
@@ -127,6 +141,47 @@ This project uses **NextAuth.js v5** (beta) for authentication with credentials-
 3. You should be redirected to home page
 4. Header should show "Sign in" and "Sign up" buttons
 
+### Test User Deactivation (SUPER_ADMIN)
+
+1. Login as SUPER_ADMIN (john@example.com)
+2. Go to http://localhost:3000/admin/users
+3. Find a CUSTOMER user in the table
+4. Click "Deactivate" button (red button)
+5. Confirm in dialog
+6. **Check console** for deactivation email (dev mode)
+7. Status badge should turn red "Inactive"
+8. Logout and try to login with deactivated user → Should fail
+
+### Test User Reactivation (SUPER_ADMIN)
+
+1. Login as SUPER_ADMIN (john@example.com)
+2. Go to http://localhost:3000/admin/users
+3. Find an inactive user (red badge)
+4. Click "Activate" button (green button)
+5. Confirm in dialog
+6. **Check console** for reactivation email (dev mode)
+7. Status badge should turn green "Active"
+8. User can now login again
+
+### Test Email Service (Production)
+
+**Setup:**
+```bash
+# 1. Create account at resend.com (free tier: 100 emails/day)
+# 2. Get API key from dashboard
+# 3. Add to .env:
+RESEND_API_KEY="re_xxxxxxxxxxxx"
+EMAIL_FROM="noreply@yourdomain.com"
+# 4. Verify your domain in Resend
+# 5. Restart dev server
+```
+
+**Testing:**
+1. Create admin invite → Real email sent
+2. Deactivate user → Real email sent
+3. Reactivate user → Real email sent
+4. Check Resend dashboard for delivery status
+
 ## Technical Implementation
 
 ### Database Schema
@@ -138,14 +193,18 @@ model User {
   fullName  String
   password  String   @default("")
   role      UserRole @default(CUSTOMER)
+  isActive  Boolean  @default(true)  // Soft delete: false = deactivated
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   Order     Order[]
+  Review    Review[]
+  Address   Address[]
 }
 
 enum UserRole {
   CUSTOMER
   ADMIN
+  SUPER_ADMIN
 }
 ```
 
@@ -234,6 +293,10 @@ Required environment variables:
 NEXTAUTH_SECRET="your-super-secret-key-change-this-in-production"
 NEXTAUTH_URL="http://localhost:3000"
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/ecommerce_db?schema=public"
+
+# Email Service (Optional - for production)
+RESEND_API_KEY="re_xxxxxxxxxxxx"  # Get from resend.com
+EMAIL_FROM="noreply@yourdomain.com"
 ```
 
 ## Security Considerations
@@ -248,6 +311,10 @@ DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/ecommerce_db?schema=
 - Invite token expiration (7 days)
 - One-time use invite tokens
 - Secure session management
+- **Soft delete pattern** (preserves data integrity)
+- **Active user validation** on login
+- **Email notifications** for security events
+- **Self-deactivation prevention**
 
 ### 🔒 Production Recommendations
 
@@ -285,7 +352,9 @@ src/
 │   │       ├── accept-invite/
 │   │       │   └── route.ts          # Accept invite and create admin account
 │   │       └── users/
-│   │           └── route.ts          # List all users (SUPER_ADMIN only)
+│   │           ├── route.ts          # List all users with statistics (SUPER_ADMIN only)
+│   │           └── [id]/
+│   │               └── route.ts      # Update user (role, isActive) (SUPER_ADMIN only)
 │   ├── login/
 │   │   └── page.tsx                  # Login page
 │   ├── register/
@@ -299,6 +368,8 @@ src/
 │       └── accept-invite/
 │           └── page.tsx              # Invite acceptance form
 ├── auth.ts                           # NextAuth configuration
+├── lib/
+│   └── email.ts                      # Email service (Resend integration + templates)
 ├── components/
 │   ├── header.tsx                    # Updated with role badges + conditional links
 │   └── providers.tsx                 # Added SessionProvider
@@ -424,23 +495,58 @@ Accept invite and create admin account.
 
 ### GET /api/admin/users
 
-List all users (SUPER_ADMIN only).
+List all users with statistics (SUPER_ADMIN only).
+
+**Response:**
+
+```json
+[
+  {
+    "id": "...",
+    "email": "user@example.com",
+    "fullName": "John Doe",
+    "role": "SUPER_ADMIN",
+    "isActive": true,
+    "createdAt": "2024-01-15T10:00:00Z",
+    "totalSpent": 1250.00,
+    "orderCount": 5,
+    "reviewCount": 3,
+    "addressCount": 2
+  }
+]
+```
+
+### PATCH /api/admin/users/[id]
+
+Update user role or activation status (SUPER_ADMIN only).
+
+**Request:**
+
+```json
+{
+  "role": "ADMIN",        // Optional
+  "isActive": false       // Optional
+}
+```
 
 **Response:**
 
 ```json
 {
-  "users": [
-    {
-      "id": "...",
-      "email": "user@example.com",
-      "fullName": "John Doe",
-      "role": "SUPER_ADMIN",
-      "createdAt": "2024-01-15T10:00:00Z"
-    }
-  ]
+  "id": "...",
+  "email": "user@example.com",
+  "fullName": "User Name",
+  "role": "ADMIN",
+  "isActive": false,
+  "updatedAt": "2026-01-03T..."
 }
 ```
+
+**Features:**
+- Sends email notification on status change
+- Prevents deactivating your own account
+- Validates user exists
+- Updates role if provided
 
 ## Common Issues & Solutions
 
