@@ -68,6 +68,23 @@ This project implements the technologies recommended in the **Web Development in
 - ✅ **Role-based access control (CUSTOMER, ADMIN, SUPER_ADMIN)**
 - ✅ **Product management (CRUD operations)**
 - ✅ **Order management with status updates**
+- ✅ **User management (SUPER_ADMIN only)**
+  - View all users with statistics (orders, spending, reviews)
+  - Activate/deactivate user accounts
+  - User status tracking (active/inactive)
+  - Soft delete preservation (maintains order/review history)
+- ✅ **Admin invite system with email notifications**
+  - Invite new admins via email
+  - Role selection (ADMIN or SUPER_ADMIN)
+  - Secure token-based invitations
+  - 7-day expiration
+  - Track pending invitations
+- ✅ **Email notification system (Resend integration)**
+  - Admin invitation emails with HTML templates
+  - User deactivation/reactivation notifications
+  - Development mode (console logging)
+  - Production mode (Resend API)
+  - Professional responsive email templates
 - ✅ **Analytics dashboard**
   - Revenue tracking and trends
   - Customer metrics
@@ -78,19 +95,24 @@ This project implements the technologies recommended in the **Web Development in
   - Financial settings
   - Inventory controls
   - Feature toggles (reviews, wishlist)
-- ✅ **Admin invite system**
 
-### Backend
+### Backend & Infrastructure
 
 - ✅ **RESTful API with Next.js**
 - ✅ **PostgreSQL database with Prisma**
 - ✅ **User management with NextAuth.js**
+- ✅ **Email service with Resend**
+  - Admin invitations
+  - User notifications
+  - Order confirmations (ready to implement)
+  - Status updates (ready to implement)
 - ✅ **Order processing and tracking**
 - ✅ **Automatic stock updates**
 - ✅ **Webhook handling (Stripe)**
 - ✅ **Data validation and error handling**
 - ✅ **Database seeding with sample data**
 - ✅ **Verified purchaser review system**
+- ✅ **Soft delete user management**
 
 ## 🛠️ Installation
 
@@ -137,6 +159,10 @@ NEXTAUTH_SECRET="your-secret-key-here" # Generate with: openssl rand -base64 32
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_..."
 STRIPE_SECRET_KEY="sk_test_..."
 STRIPE_WEBHOOK_SECRET="whsec_..."
+
+# Resend Email Service (optional - logs to console if not set)
+RESEND_API_KEY="re_..." # Get from https://resend.com/api-keys
+EMAIL_FROM="noreply@yourdomain.com"
 ```
 
 ### 4. Run Migrations & Seed
@@ -195,9 +221,14 @@ The application has three user roles:
 - View and update orders
 - View analytics
 - Invite other admins
-
-### SUPER_ADMIN
-
+  **User management**
+  - View all users with statistics
+  - Activate/deactivate accounts
+  - Invite new admins
+  - Assign admin roles
+- Manage store settings
+- Full system configuration
+- Email notification system access
 - All admin permissions
 - Manage store settings
 - Full system configuration
@@ -285,6 +316,10 @@ npm run db:studio    # Open Prisma Studio
 - `PATCH /api/admin/products/[id]` - Update product
 - `DELETE /api/admin/products/[id]` - Delete product
 - `GET /api/admin/orders` - Get all orders
+- `GET /api/admin/users` - Get all users with statistics (SUPER_ADMIN)
+- `PATCH /api/admin/users/[id]` - Update user role or status (SUPER_ADMIN)
+- `GET /api/admin/invite` - Get pending invitations (SUPER_ADMIN)
+- `POST /api/admin/invite` - Create admin invitation (SUPER_ADMIN)
 - `GET /api/admin/orders/[id]` - Get order details
 - `PATCH /api/admin/orders/[id]` - Update order status
 - `GET /api/admin/analytics` - Get analytics data
@@ -326,14 +361,18 @@ e-commerce/
 │   │   │   ├── user/           # User profile endpoints
 │   │   │   ├── wishlist/       # Wishlist endpoints
 │   │   │   ├── reviews/        # Review endpoints
-│   │   │   ├── admin/          # Admin endpoints
+│   │   │   ├── ├── settings/
+│   │   │   │   ├── users/      # User management
+│   │   │   │   └── invite/     # Admin invitations   # Admin endpoints
 │   │   │   │   ├── products/
 │   │   │   │   ├── orders/
 │   │   │   │   ├── analytics/
 │   │   │   │   └── settings/
 │   │   │   ├── auth/           # NextAuth endpoints
 │   │   │   ├── register/       # User registration
-│   │   │   ├── checkout/       # Stripe checkout
+│   │   │   ├── settings/
+│   │   │   ├── users/          # User management
+│   │   │   └── accept-invite/  # Admin invitation acceptance       # Stripe checkout
 │   │   │   └── webhooks/       # Stripe webhooks
 │   │   ├── admin/              # Admin dashboard pages
 │   │   │   ├── products/
@@ -374,6 +413,7 @@ e-commerce/
 │   ├── hooks/                  # Custom React hooks
 │   │   └── use-toast.ts        # Toast notification hook
 │   ├── store/                  # Zustand stores
+│   │   ├── email.ts            # Email service (Resend)
 │   │   └── cart.ts             # Cart state management
 │   ├── lib/                    # Utilities and API
 │   │   ├── api.ts              # API client functions
@@ -551,22 +591,62 @@ npm run test
 - **Error Handling**: Comprehensive error handling and validation
 - **Loading States**: Proper loading and error states
 - **Responsive Design**: Mobile-first approach with Tailwind
-- **Accessibility**: Radix UI for accessible components
-- **Performance**: Query caching with TanStack Query
-- **Database**: Proper indexing and relationships
-- **Git Commits**: Semantic commit messages
+- \*\*� Email Service
+
+The platform includes a professional email notification system:
+
+### Current Implementation (✅ Active)
+
+- **Admin Invitations** - Automated emails with invitation links
+- **User Deactivation** - Notification when account is deactivated
+- **User Reactivation** - Welcome back notification
+
+### Ready to Implement
+
+- **Order Confirmations** - Automatic after checkout
+- **Order Status Updates** - Shipping notifications
+- **Welcome Emails** - New user onboarding
+- **Password Reset** - Secure reset flow
+
+### Configuration
+
+\*\*DeveDocumentation
+
+### Project Documentation
+
+- [Admin System Guide](ADMIN_SYSTEM.md) - Complete admin dashboard documentation
+- [Authentication Guide](AUTHENTICATION.md) - User authentication and authorization
+- [Email Service Guide](docs/EMAIL_SERVICE.md) - Email notification system
+
+### External Resources
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [NextAuth.js](https://next-auth.js.org)
+- [Stripe Documentation](https://stripe.com/docs)
+- [Resend Documentation](https://resend
+  See [Email Service Documentation](docs/EMAIL_SERVICE.md) for details.
 
 ## 🔮 Future Enhancements
 
 Following the 2026 Web Development roadmap, consider adding:
 
-- **Email Notifications** - Order confirmations, shipping updates
 - **Product Images Gallery** - Multiple images per product
 - **Product Variants** - Size, color options
 - **Inventory Management** - Stock alerts, reorder points
 - **Shipping Integration** - Real-time shipping rates
 - **Discount Codes** - Coupon system
 - **Product Recommendations** - AI-based suggestions
+- **Social Authentication** - Google, GitHub login
+- **PWA Support** - Offline functionality
+- **Real-time Updates** - WebSocket for order status
+- **Advanced Search** - Elasticsearch integration
+- **Multi-language** - i18n support
+- **Two-Factor Authentication** - Enhanced security
+- **Advanced Email Campaigns** - Marketing automationbased suggestions
 - **Social Authentication** - Google, GitHub login
 - **PWA Support** - Offline functionality
 - **Real-time Updates** - WebSocket for order status
