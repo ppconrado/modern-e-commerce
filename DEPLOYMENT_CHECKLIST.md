@@ -24,7 +24,6 @@ Use this checklist to track your deployment progress.
 - [ ] Imported GitHub repository
 - [ ] Added environment variables:
   - [ ] `DATABASE_URL`
-  - [ ] `NEXT_PUBLIC_API_URL`
   - [ ] `AUTH_SECRET` (generated with `openssl rand -base64 32`)
   - [ ] `NEXTAUTH_URL`
   - [ ] `STRIPE_SECRET_KEY`

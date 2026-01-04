@@ -46,9 +46,6 @@ Create `.env.production.example`:
 # Database - Will be provided by Neon
 DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/dbname?sslmode=require"
 
-# Next.js
-NEXT_PUBLIC_API_URL="https://your-app.vercel.app"
-
 # NextAuth
 AUTH_SECRET="generate-with-openssl-rand-base64-32"
 NEXTAUTH_URL="https://your-app.vercel.app"
@@ -174,14 +171,6 @@ DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 ```
 DATABASE_URL = postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 ```
-
-#### Next.js
-
-```
-NEXT_PUBLIC_API_URL = https://your-project.vercel.app
-```
-
-_Note: Replace `your-project` with actual Vercel domain_
 
 #### NextAuth
 
@@ -620,7 +609,6 @@ After adding domain:
 
 ```bash
 NEXTAUTH_URL = https://example.com
-NEXT_PUBLIC_API_URL = https://example.com
 ```
 
 ---
