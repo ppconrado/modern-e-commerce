@@ -123,7 +123,9 @@ export async function sendUserReactivatedEmail(
             <p>Hello ${fullName},</p>
             <p>Great news! Your account has been reactivated.</p>
             <p>You can now log in and continue using all features of our platform.</p>
-            <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login" class="button">
+            <a href="${
+              process.env.NEXTAUTH_URL || 'http://localhost:3000'
+            }/login" class="button">
               Log In Now
             </a>
             <p>Best regards,<br>E-Commerce Team</p>
