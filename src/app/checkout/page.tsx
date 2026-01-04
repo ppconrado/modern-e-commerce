@@ -397,7 +397,9 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <Label>Label (e.g., "Home", "Office")</Label>
+                    <Label>
+                      Label (e.g., &quot;Home&quot;, &quot;Office&quot;)
+                    </Label>
                     <Input
                       value={formData.label}
                       onChange={(e) =>

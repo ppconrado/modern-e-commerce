@@ -128,7 +128,7 @@ export default function AcceptInvitePage() {
             Accept Admin Invitation
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            You've been invited to join as{' '}
+            You&apos;ve been invited to join as{' '}
             <span className="font-semibold text-blue-600">
               {inviteData?.role}
             </span>
