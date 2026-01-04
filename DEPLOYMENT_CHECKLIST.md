@@ -117,6 +117,7 @@ vercel --prod
 ## 🆘 Help
 
 If you encounter issues, check:
+
 1. [DEPLOYMENT.md](./DEPLOYMENT.md) - Full deployment guide
 2. Vercel logs - Dashboard → Deployments → Logs
 3. Neon dashboard - Monitoring tab

@@ -1,11 +1,13 @@
 {
-  "buildCommand": "prisma generate && npm run build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "functions": {
-    "app/api/**": {
-      "maxDuration": 10
+    "buildCommand": "prisma generate && npm run build",
+    "installCommand": "npm install",
+    "framework": "nextjs",
+    "regions": [
+        "iad1"
+    ],
+    "functions": {
+        "app/api/**": {
+            "maxDuration": 10
+        }
     }
-  }
 }

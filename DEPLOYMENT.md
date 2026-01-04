@@ -3,6 +3,7 @@
 ## 📋 Overview
 
 This guide covers deploying the e-commerce application to production using:
+
 - **Vercel** - Frontend & Backend (Next.js)
 - **Neon** - PostgreSQL Database
 - **Cloudinary** - Image Storage (already configured)
@@ -169,17 +170,21 @@ DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 2. Add each variable:
 
 #### Database
+
 ```
 DATABASE_URL = postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 ```
 
 #### Next.js
+
 ```
 NEXT_PUBLIC_API_URL = https://your-project.vercel.app
 ```
-*Note: Replace `your-project` with actual Vercel domain*
+
+_Note: Replace `your-project` with actual Vercel domain_
 
 #### NextAuth
+
 ```bash
 # Generate secure secret first:
 # Run locally: openssl rand -base64 32
@@ -188,14 +193,17 @@ NEXTAUTH_URL = https://your-project.vercel.app
 ```
 
 #### Stripe
+
 ```
 STRIPE_SECRET_KEY = sk_live_your_production_key
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_live_your_production_key
 STRIPE_WEBHOOK_SECRET = whsec_production_webhook_secret
 ```
-*Note: Use production keys, not test keys*
+
+_Note: Use production keys, not test keys_
 
 #### Cloudinary
+
 ```
 CLOUDINARY_CLOUD_NAME = your_cloud_name
 CLOUDINARY_API_KEY = your_api_key
@@ -203,6 +211,7 @@ CLOUDINARY_API_SECRET = your_api_secret
 ```
 
 #### Resend
+
 ```
 RESEND_API_KEY = re_xxxxxxxxxxxx
 EMAIL_FROM = noreply@yourdomain.com
@@ -265,6 +274,7 @@ DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 ```
 
 **Alternative: Create admin via app**
+
 1. Go to `https://your-app.vercel.app/register`
 2. First user automatically becomes SUPER_ADMIN
 3. Login and verify admin dashboard access
@@ -278,6 +288,7 @@ DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
 Visit your Vercel URL: `https://your-project.vercel.app`
 
 **Test checklist:**
+
 - [ ] Homepage loads correctly
 - [ ] Products display with images from Cloudinary
 - [ ] Can register new account
@@ -415,6 +426,7 @@ vercel --prod
 ### 9.1 Vercel Analytics
 
 Free tier includes:
+
 - Real-time visitors
 - Page performance metrics
 - Core Web Vitals
@@ -424,6 +436,7 @@ Enable in Vercel Dashboard → **Analytics**
 ### 9.2 Neon Monitoring
 
 Check database health:
+
 1. Go to Neon Dashboard
 2. **Monitoring** tab shows:
    - Active connections
@@ -448,6 +461,7 @@ npx @sentry/wizard@latest -i nextjs
 ### Error: "Prisma Client not generated"
 
 **Solution:**
+
 ```bash
 # Add to package.json
 "postinstall": "prisma generate"
@@ -460,12 +474,14 @@ git push
 ### Error: "Database connection failed"
 
 **Check:**
+
 1. DATABASE_URL has `?sslmode=require`
 2. Neon database is active (not paused)
 3. Connection string is correct
 4. No typos in environment variable
 
 **Test connection:**
+
 ```bash
 DATABASE_URL="..." npx prisma db pull
 ```
@@ -473,6 +489,7 @@ DATABASE_URL="..." npx prisma db pull
 ### Error: "NEXTAUTH_URL not set"
 
 **Solution:**
+
 ```bash
 # Add to Vercel environment variables
 NEXTAUTH_URL = https://your-project.vercel.app
@@ -484,6 +501,7 @@ vercel --prod
 ### Error: "Images not loading"
 
 **Check:**
+
 1. Cloudinary credentials correct
 2. Images uploaded to Cloudinary
 3. `NEXT_PUBLIC_` prefix for client-side variables
@@ -492,6 +510,7 @@ vercel --prod
 ### Deployment Fails
 
 **Check build logs:**
+
 1. Vercel Dashboard → Deployments
 2. Click failed deployment
 3. Check "Build Logs" tab
@@ -507,16 +526,19 @@ vercel --prod
 ### Free Tier Limits
 
 **Vercel:**
+
 - ✅ 100 GB bandwidth/month
 - ✅ Unlimited deployments
 - ✅ Serverless functions: 100 GB-hours
 
 **Neon:**
+
 - ✅ 0.5 GB storage
 - ✅ 1 project
 - ✅ 10 branches
 
 **When to upgrade:**
+
 - Vercel: > 100 GB bandwidth → Pro ($20/month)
 - Neon: > 0.5 GB data → Scale ($19/month)
 
@@ -538,10 +560,12 @@ vercel --prod
 ### Database Backups
 
 **Neon automatic backups:**
+
 - Daily backups (last 7 days on free tier)
 - Point-in-time restore available
 
 **Manual backup:**
+
 ```bash
 # Export database
 DATABASE_URL="..." npx prisma db pull
@@ -593,6 +617,7 @@ psql $DATABASE_URL < backup.sql
 ### Update Environment Variables
 
 After adding domain:
+
 ```bash
 NEXTAUTH_URL = https://example.com
 NEXT_PUBLIC_API_URL = https://example.com
@@ -622,6 +647,7 @@ NEXT_PUBLIC_API_URL = https://example.com
 **Cost: $0/month** for free tier limits!
 
 **Next steps:**
+
 - Monitor usage in Vercel/Neon dashboards
 - Add custom domain
 - Enable analytics
