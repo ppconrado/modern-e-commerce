@@ -3,8 +3,10 @@ node_modules
 dist
 .env
 .env.local
+.env.production
 .env.production.local
 .env.development.local
+.env.vercel.production
 .DS_Store
 *.log
 test-results/
@@ -25,3 +27,4 @@ scripts/generate-hash.ts
 scripts/update-passwords.ts
 
 playwright/.auth/
+.vercel
