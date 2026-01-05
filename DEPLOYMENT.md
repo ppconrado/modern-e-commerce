@@ -1,648 +1,437 @@
-# Production Deployment Guide - Vercel + Neon
+# 🚀 Production Deployment Guide - Vercel + Neon
+
+> **✅ Tested and Working:** This guide contains the exact steps that successfully deployed the application to production.
 
 ## 📋 Overview
 
-This guide covers deploying the e-commerce application to production using:
+Deploy the e-commerce application to production using:
 
-- **Vercel** - Frontend & Backend (Next.js)
-- **Neon** - PostgreSQL Database
-- **Cloudinary** - Image Storage (already configured)
-- **Resend** - Email Service (already configured)
+- **Vercel** - Frontend & Backend hosting (Next.js) - Free tier: 100GB bandwidth
+- **Neon** - PostgreSQL Database - Free tier: 0.5GB storage
+- **Cloudinary** - Image Storage - Free tier: 25GB/month
+- **Stripe** - Payment Processing (test keys initially)
+- **Resend** - Email Service (optional, console logging if not configured)
 
----
-
-## 🎯 Prerequisites
-
-- [x] GitHub account
-- [x] Vercel account (free) - [vercel.com](https://vercel.com)
-- [x] Neon account (free) - [neon.tech](https://neon.tech)
-- [x] Cloudinary credentials (already have)
-- [x] Resend API key (already have)
+**⏱️ Time to Deploy:** ~15 minutes
 
 ---
 
-## 📦 Step 1: Prepare Project for Production
+## 🎯 Quick Start Deployment
 
-### 1.1 Update package.json Build Scripts
+### Step 1: Create Neon Database (3 minutes)
 
-Add Prisma generation to build process:
-
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "postinstall": "prisma generate"
-  }
-}
-```
-
-### 1.2 Create Production Environment File
-
-Create `.env.production.example`:
-
-```bash
-# Database - Will be provided by Neon
-DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/dbname?sslmode=require"
-
-# NextAuth
-AUTH_SECRET="generate-with-openssl-rand-base64-32"
-NEXTAUTH_URL="https://your-app.vercel.app"
-
-# Stripe
-STRIPE_SECRET_KEY="sk_live_your_production_key"
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_live_your_production_key"
-STRIPE_WEBHOOK_SECRET="whsec_production_webhook_secret"
-
-# Cloudinary (same as local)
-CLOUDINARY_CLOUD_NAME="your_cloud_name"
-CLOUDINARY_API_KEY="your_api_key"
-CLOUDINARY_API_SECRET="your_api_secret"
-
-# Resend
-RESEND_API_KEY="re_xxxxxxxxxxxx"
-EMAIL_FROM="noreply@yourdomain.com"
-```
-
-### 1.3 Create vercel.json Configuration
-
-Create `vercel.json` in project root:
-
-```json
-{
-  "buildCommand": "prisma generate && npm run build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["iad1"],
-  "functions": {
-    "app/api/**": {
-      "maxDuration": 10
-    }
-  }
-}
-```
-
-### 1.4 Verify .gitignore
-
-Make sure these are in `.gitignore`:
-
-```
-.env
-.env.local
-.env.production
-node_modules
-.next
-```
-
-### 1.5 Commit and Push Changes
-
-```bash
-git add .
-git commit -m "chore: prepare for production deployment"
-git push origin main
-```
-
----
-
-## 🗄️ Step 2: Setup Neon Database
-
-### 2.1 Create Neon Account
-
-1. Go to [neon.tech](https://neon.tech)
-2. Sign up with GitHub (recommended)
-3. No credit card required
-
-### 2.2 Create Database Project
-
-1. Click **"Create Project"**
-2. Project settings:
-   - **Name**: `ecommerce-production`
-   - **Region**: Choose closest to your users (e.g., `US East (N. Virginia)` for US)
-   - **PostgreSQL Version**: `16` (latest stable)
+1. Go to https://console.neon.tech/
+2. Sign up/Login (can use GitHub)
 3. Click **"Create Project"**
+4. Configure:
+   - **Name**: `ecommerce-production`
+   - **Region**: Choose closest to your users (e.g., `US East (Ohio)` or `São Paulo`)
+5. Click **"Create Project"**
+6. **COPY** the connection string shown (starts with `postgresql://`)
 
-### 2.3 Get Connection String
+**⚠️ CRITICAL:** The connection string format you'll see is:
 
-After project creation:
+```
+psql 'postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require&channel_binding=require'
+```
 
-1. Go to **Dashboard** → **Connection Details**
-2. Copy the **Connection String**
-3. It looks like:
-   ```
-   postgresql://username:password@ep-xxxxx.us-east-1.aws.neon.tech/neondb?sslmode=require
-   ```
+**For Vercel, you MUST use ONLY:**
 
-**Important:** Save this connection string - you'll need it for Vercel!
+```
+postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
+```
 
-### 2.4 Test Connection (Optional)
+**Remove:**
 
-Test locally before deployment:
+- ❌ `psql '` from the beginning
+- ❌ `'` from the end
+- ❌ `&channel_binding=require` from the end
+
+---
+
+### Step 2: Deploy to Vercel (5 minutes)
+
+1. Go to https://vercel.com/
+2. Sign up/Login with GitHub
+3. Click **"Add New Project"**
+4. **Import** your GitHub repository
+5. Vercel will auto-detect Next.js - Click **"Deploy"**
+6. Wait ~2 minutes for initial build (it will fail - that's expected, we need env vars)
+
+---
+
+### Step 3: Configure Environment Variables (5 minutes)
+
+1. Go to **Settings** → **Environment Variables**
+2. Add each variable below one by one:
+
+#### Database (Required)
 
 ```bash
-# Temporarily use Neon database
-DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require" npx prisma db push
+Name: DATABASE_URL
+Value: postgresql://your-user:your-password@ep-xxx.neon.tech/neondb?sslmode=require
+Environment: ✓ Production ✓ Preview ✓ Development
+```
 
-# Verify connection
-DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require" npx prisma studio
+#### Authentication (Required)
+
+```bash
+Name: AUTH_SECRET
+Value: [Generate below]
+Environment: ✓ Production ✓ Preview ✓ Development
+```
+
+To generate AUTH_SECRET, run in terminal:
+
+```bash
+# Windows PowerShell
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# Mac/Linux
+openssl rand -base64 32
+```
+
+```bash
+Name: NEXTAUTH_URL
+Value: https://your-app-name.vercel.app
+Environment: ✓ Production (only)
+```
+
+#### Stripe (Required - Use Test Keys Initially)
+
+```bash
+Name: STRIPE_SECRET_KEY
+Value: sk_test_your_stripe_secret_key
+Environment: ✓ Production ✓ Preview ✓ Development
+
+Name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+Value: pk_test_your_stripe_publishable_key
+Environment: ✓ Production ✓ Preview ✓ Development
+
+Name: STRIPE_WEBHOOK_SECRET
+Value: whsec_your_webhook_secret
+Environment: ✓ Production ✓ Preview ✓ Development
+```
+
+Get Stripe keys from: https://dashboard.stripe.com/test/apikeys
+
+#### Cloudinary (Required)
+
+```bash
+Name: CLOUDINARY_CLOUD_NAME
+Value: your_cloud_name
+Environment: ✓ Production ✓ Preview ✓ Development
+
+Name: CLOUDINARY_API_KEY
+Value: your_api_key
+Environment: ✓ Production ✓ Preview ✓ Development
+
+Name: CLOUDINARY_API_SECRET
+Value: your_api_secret
+Environment: ✓ Production ✓ Preview ✓ Development
+```
+
+Get from: https://console.cloudinary.com/
+
+#### Email (Optional)
+
+```bash
+Name: EMAIL_FROM
+Value: onboarding@resend.dev
+Environment: ✓ Production ✓ Preview ✓ Development
+
+# RESEND_API_KEY is optional - emails will log to console if not set
 ```
 
 ---
 
-## 🚀 Step 3: Deploy to Vercel
+### Step 4: Redeploy Application (2 minutes)
 
-### 3.1 Import Project to Vercel
-
-1. Go to [vercel.com](https://vercel.com)
-2. Click **"Add New..."** → **"Project"**
-3. Click **"Import Git Repository"**
-4. Select your GitHub repository: `ppconrado/modern-e-commerce`
-5. Vercel auto-detects Next.js - Click **"Import"**
-
-### 3.2 Configure Environment Variables
-
-**Before deploying**, add all environment variables:
-
-1. In Vercel project settings, go to **"Environment Variables"**
-2. Add each variable:
-
-#### Database
-
-```
-DATABASE_URL = postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
-```
-
-#### NextAuth
-
-```bash
-# Generate secure secret first:
-# Run locally: openssl rand -base64 32
-AUTH_SECRET = [paste generated secret here]
-NEXTAUTH_URL = https://your-project.vercel.app
-```
-
-#### Stripe
-
-```
-STRIPE_SECRET_KEY = sk_live_your_production_key
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = pk_live_your_production_key
-STRIPE_WEBHOOK_SECRET = whsec_production_webhook_secret
-```
-
-_Note: Use production keys, not test keys_
-
-#### Cloudinary
-
-```
-CLOUDINARY_CLOUD_NAME = your_cloud_name
-CLOUDINARY_API_KEY = your_api_key
-CLOUDINARY_API_SECRET = your_api_secret
-```
-
-#### Resend
-
-```
-RESEND_API_KEY = re_xxxxxxxxxxxx
-EMAIL_FROM = noreply@yourdomain.com
-```
-
-### 3.3 Deploy
-
-1. After adding all variables, click **"Deploy"**
-2. Vercel will:
-   - Install dependencies
-   - Run `prisma generate`
-   - Build Next.js app
-   - Deploy to global CDN
-3. Wait 2-3 minutes for first deployment
+1. Go to **Deployments** tab
+2. Click on the latest deployment
+3. Click **⋯** (three dots) → **Redeploy**
+4. Wait ~2 minutes for build to complete
+5. Build should succeed now
 
 ---
 
-## 🔧 Step 4: Database Migration
+### Step 5: Run Database Migrations (3 minutes)
 
-### 4.1 Run Migrations in Production
-
-After successful Vercel deployment, migrate database:
-
-**Option A: Using Vercel CLI (Recommended)**
+Now we need to create the database tables. Run these commands locally:
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
+# 1. Install Vercel CLI (if not installed)
+npm install -g vercel
 
-# Login
+# 2. Login to Vercel
 vercel login
 
-# Link project
-vercel link
+# 3. Link your project
+vercel link --yes
 
-# Pull production environment variables
-vercel env pull .env.production
+# 4. Set DATABASE_URL for migration
+# Windows PowerShell:
+$env:DATABASE_URL = "postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require"
 
-# Run migrations
+# Mac/Linux:
+export DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require"
+
+# 5. Run migrations
 npx prisma migrate deploy
 
-# Verify
+# 6. Seed database with initial data (products, test users)
+npx tsx prisma/seed.ts
+```
+
+**Expected output:**
+
+```
+✔ Generated Prisma Client
+10 migrations found
+Applying migration `20251228211420_init`
+...
+All migrations have been successfully applied.
+
+Start seeding...
+Created product: Wireless Headphones
+Created product: Smart Watch
+...
+Seeding finished.
+```
+
+---
+
+### Step 6: Test Your Application (2 minutes)
+
+1. Open your Vercel URL: `https://your-app-name.vercel.app`
+2. You should see:
+   - ✅ Homepage with products
+   - ✅ Images loading from Cloudinary
+   - ✅ Login/Register working
+
+**Test Login:**
+
+- Email: `test@test.com`
+- Password: `Test@123`
+
+---
+
+## ✅ Deployment Checklist
+
+Use this to track your progress:
+
+### Pre-Deployment
+
+- [ ] Code pushed to GitHub
+- [ ] Local development working
+- [ ] All tests passing
+
+### Neon Database
+
+- [ ] Created Neon account
+- [ ] Created project
+- [ ] Copied connection string (removed `psql '`, `'`, and `&channel_binding=require`)
+
+### Vercel Setup
+
+- [ ] Created Vercel account
+- [ ] Imported GitHub repository
+- [ ] Added all environment variables:
+  - [ ] DATABASE_URL (without psql, without channel_binding)
+  - [ ] AUTH_SECRET (generated)
+  - [ ] NEXTAUTH_URL (your Vercel URL)
+  - [ ] STRIPE_SECRET_KEY
+  - [ ] NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  - [ ] STRIPE_WEBHOOK_SECRET
+  - [ ] CLOUDINARY_CLOUD_NAME
+  - [ ] CLOUDINARY_API_KEY
+  - [ ] CLOUDINARY_API_SECRET
+  - [ ] EMAIL_FROM
+- [ ] Redeployed after adding variables
+
+### Database Migration
+
+- [ ] Installed Vercel CLI
+- [ ] Linked project: `vercel link`
+- [ ] Set DATABASE_URL locally
+- [ ] Ran: `npx prisma migrate deploy`
+- [ ] Ran: `npx tsx prisma/seed.ts`
+
+### Testing
+
+- [ ] Homepage loads
+- [ ] Products display
+- [ ] Images load
+- [ ] Can register
+- [ ] Can login
+- [ ] Cart works
+- [ ] Admin dashboard accessible (first user is SUPER_ADMIN)
+
+---
+
+## 🔧 Common Issues & Solutions
+
+### Issue: "Cannot connect to database"
+
+**Solution:**
+
+1. Check DATABASE_URL in Vercel Settings
+2. Ensure it does NOT have:
+   - `psql '` at the beginning
+   - `'` at the end
+   - `&channel_binding=require` at the end
+3. Should be: `postgresql://user:pass@host/db?sslmode=require`
+4. Redeploy after fixing
+
+### Issue: "No products showing"
+
+**Solution:**
+
+```bash
+# Seed the database
+$env:DATABASE_URL = "your-neon-url"
+npx tsx prisma/seed.ts
+```
+
+### Issue: "Authentication not working"
+
+**Solution:**
+
+1. Check AUTH_SECRET is set in Vercel
+2. Check NEXTAUTH_URL matches your Vercel domain exactly
+3. Redeploy
+
+### Issue: "Images not uploading"
+
+**Solution:**
+
+1. Verify Cloudinary credentials in Vercel
+2. Check console for specific errors
+3. Ensure CLOUDINARY_API_SECRET is correct
+
+---
+
+## 📊 Monitoring & Maintenance
+
+### View Logs
+
+```bash
+vercel logs your-app-name --follow
+```
+
+Or via web: Vercel Dashboard → Your Project → Deployments → Click deployment → Logs
+
+### Database Management
+
+Access your Neon database:
+
+```bash
+# Via Neon Console
+https://console.neon.tech/ → Your Project → SQL Editor
+
+# Via Prisma Studio (local)
+$env:DATABASE_URL = "your-neon-url"
 npx prisma studio
 ```
 
-**Option B: Direct Connection (Alternative)**
-
-```bash
-# Use Neon connection string directly
-DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require" npx prisma migrate deploy
-```
-
-### 4.2 Seed Production Database (Optional)
-
-Add initial data (first admin user, sample products):
-
-```bash
-# Using .env.production
-DATABASE_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require" npm run db:seed
-```
-
-**Alternative: Create admin via app**
-
-1. Go to `https://your-app.vercel.app/register`
-2. First user automatically becomes SUPER_ADMIN
-3. Login and verify admin dashboard access
-
----
-
-## ✅ Step 5: Verify Deployment
-
-### 5.1 Check Application Health
-
-Visit your Vercel URL: `https://your-project.vercel.app`
-
-**Test checklist:**
-
-- [ ] Homepage loads correctly
-- [ ] Products display with images from Cloudinary
-- [ ] Can register new account
-- [ ] Can login with credentials
-- [ ] Admin user can access `/admin` dashboard
-- [ ] Can add products to cart
-- [ ] Images upload works (admin panel)
-
-### 5.2 Check Database Connection
-
-```bash
-# From Vercel deployment logs
-# Should see: "✓ Prisma Client generated successfully"
-```
-
-### 5.3 Test Email Service
-
-1. Login as SUPER_ADMIN
-2. Go to `/admin/users`
-3. Create invite
-4. Check email inbox (should receive invite email)
-
-### 5.4 Check Vercel Logs
-
-If something fails:
-
-1. Go to Vercel Dashboard → **Deployments**
-2. Click latest deployment
-3. Check **Logs** tab for errors
-4. Common issues:
-   - Missing environment variables
-   - Database connection errors
-   - Prisma generation errors
-
----
-
-## 🔄 Step 6: Setup Continuous Deployment
-
-### 6.1 Automatic Deployments
-
-Vercel automatically deploys on every push to `main`:
-
-```bash
-# Make a change
-git add .
-git commit -m "feat: add new feature"
-git push origin main
-
-# Vercel deploys automatically (1-2 minutes)
-```
-
-### 6.2 Preview Deployments
-
-For pull requests:
-
-```bash
-# Create feature branch
-git checkout -b feature/new-feature
-
-# Make changes and push
-git push origin feature/new-feature
-
-# Create PR on GitHub
-# Vercel creates preview deployment automatically
-# URL: https://your-project-git-feature-branch.vercel.app
-```
-
-### 6.3 Production vs Preview
-
-- **Production**: `main` branch → `your-project.vercel.app`
-- **Preview**: Other branches → `your-project-git-branch.vercel.app`
-
----
-
-## 🎛️ Step 7: Configure Stripe Webhooks (Production)
-
-### 7.1 Get Vercel Production URL
-
-Your webhook URL: `https://your-project.vercel.app/api/webhooks/stripe`
-
-### 7.2 Setup Stripe Webhook
-
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
-2. Click **"Add endpoint"**
-3. Enter URL: `https://your-project.vercel.app/api/webhooks/stripe`
-4. Select events:
-   - `checkout.session.completed`
-   - `payment_intent.succeeded`
-5. Copy **Signing Secret** (starts with `whsec_`)
-6. Add to Vercel environment variables:
-   ```
-   STRIPE_WEBHOOK_SECRET = whsec_production_secret
-   ```
-
-### 7.3 Redeploy
-
-```bash
-# Trigger redeployment to pick up new env var
-vercel --prod
-```
-
----
-
-## 🔐 Step 8: Security Checklist
-
-### 8.1 Environment Variables
-
-- [ ] `AUTH_SECRET` is random and secure (32+ characters)
-- [ ] `DATABASE_URL` has `?sslmode=require`
-- [ ] All secrets are in Vercel env vars, NOT in code
-- [ ] `.env` is in `.gitignore`
-
-### 8.2 Authentication
-
-- [ ] NEXTAUTH_URL matches production domain
-- [ ] First user tested as SUPER_ADMIN
-- [ ] Admin routes protected (test `/admin` logged out)
-
-### 8.3 Database
-
-- [ ] Neon database has SSL enabled
-- [ ] Connection pooling enabled (default in Neon)
-- [ ] No public IP exposure
-
-### 8.4 API Security
-
-- [ ] API routes check authentication
-- [ ] Admin routes check SUPER_ADMIN role
-- [ ] CORS properly configured (Next.js default is secure)
-
----
-
-## 📊 Step 9: Monitoring & Maintenance
-
-### 9.1 Vercel Analytics
-
-Free tier includes:
-
-- Real-time visitors
-- Page performance metrics
-- Core Web Vitals
-
-Enable in Vercel Dashboard → **Analytics**
-
-### 9.2 Neon Monitoring
-
-Check database health:
-
-1. Go to Neon Dashboard
-2. **Monitoring** tab shows:
-   - Active connections
-   - Storage usage
-   - Query performance
-
-### 9.3 Error Tracking (Optional)
-
-Add Sentry for error monitoring:
-
-```bash
-npm install @sentry/nextjs
-
-# Follow setup wizard
-npx @sentry/wizard@latest -i nextjs
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Error: "Prisma Client not generated"
-
-**Solution:**
-
-```bash
-# Add to package.json
-"postinstall": "prisma generate"
-
-# Redeploy
-git commit -m "fix: add prisma postinstall hook"
-git push
-```
-
-### Error: "Database connection failed"
-
-**Check:**
-
-1. DATABASE_URL has `?sslmode=require`
-2. Neon database is active (not paused)
-3. Connection string is correct
-4. No typos in environment variable
-
-**Test connection:**
-
-```bash
-DATABASE_URL="..." npx prisma db pull
-```
-
-### Error: "NEXTAUTH_URL not set"
-
-**Solution:**
-
-```bash
-# Add to Vercel environment variables
-NEXTAUTH_URL = https://your-project.vercel.app
-
-# Redeploy
-vercel --prod
-```
-
-### Error: "Images not loading"
-
-**Check:**
-
-1. Cloudinary credentials correct
-2. Images uploaded to Cloudinary
-3. `NEXT_PUBLIC_` prefix for client-side variables
-4. Network tab shows 200 status for images
-
-### Deployment Fails
-
-**Check build logs:**
-
-1. Vercel Dashboard → Deployments
-2. Click failed deployment
-3. Check "Build Logs" tab
-4. Common issues:
-   - TypeScript errors
-   - Missing dependencies
-   - Environment variables missing
-
----
-
-## 📈 Scaling Considerations
-
-### Free Tier Limits
-
-**Vercel:**
-
-- ✅ 100 GB bandwidth/month
-- ✅ Unlimited deployments
-- ✅ Serverless functions: 100 GB-hours
-
-**Neon:**
-
-- ✅ 0.5 GB storage
-- ✅ 1 project
-- ✅ 10 branches
-
-**When to upgrade:**
-
-- Vercel: > 100 GB bandwidth → Pro ($20/month)
-- Neon: > 0.5 GB data → Scale ($19/month)
-
-### Performance Optimization
-
-1. **Enable Vercel Edge Functions** (auto-enabled)
-2. **Database connection pooling** (enabled in Neon)
-3. **Image optimization** (Cloudinary handles this)
-4. **Caching**:
-   ```tsx
-   // Add to API routes
-   export const revalidate = 60; // Cache for 60 seconds
-   ```
-
----
-
-## 🔄 Backup Strategy
-
-### Database Backups
-
-**Neon automatic backups:**
-
-- Daily backups (last 7 days on free tier)
-- Point-in-time restore available
-
-**Manual backup:**
-
-```bash
-# Export database
-DATABASE_URL="..." npx prisma db pull
-pg_dump $DATABASE_URL > backup.sql
-
-# Restore
-psql $DATABASE_URL < backup.sql
-```
-
-### Code Backups
-
-- GitHub repository is your backup
-- Vercel keeps deployment history
-- Can rollback any deployment in Vercel Dashboard
-
----
-
-## 📝 Post-Deployment Checklist
-
-- [ ] Application accessible at production URL
-- [ ] Database migrations completed
-- [ ] First admin user created
-- [ ] All features tested:
-  - [ ] User registration/login
-  - [ ] Product browsing
-  - [ ] Add to cart
-  - [ ] Admin dashboard
-  - [ ] Image upload
-  - [ ] Email sending
-- [ ] Environment variables configured
-- [ ] Stripe webhooks setup
-- [ ] Custom domain configured (if applicable)
-- [ ] SSL/HTTPS working (automatic in Vercel)
-- [ ] Analytics enabled
-- [ ] Monitoring setup
-
----
-
-## 🌐 Custom Domain (Optional)
-
-### Add Custom Domain
-
-1. Vercel Dashboard → **Settings** → **Domains**
-2. Click **"Add"**
-3. Enter your domain: `example.com`
-4. Follow DNS configuration instructions
-5. Vercel provisions SSL automatically
-
 ### Update Environment Variables
 
-After adding domain:
-
-```bash
-NEXTAUTH_URL = https://example.com
-```
+1. Vercel Dashboard → Settings → Environment Variables
+2. Edit variable → Save
+3. Go to Deployments → Redeploy
 
 ---
 
-## 📞 Support Resources
+## 🚀 Upgrading to Production (When Ready)
 
-- **Vercel Docs**: https://vercel.com/docs
-- **Neon Docs**: https://neon.tech/docs
-- **Next.js Deployment**: https://nextjs.org/docs/deployment
-- **Prisma Production**: https://www.prisma.io/docs/guides/deployment
+### Stripe Live Keys
+
+1. Go to https://dashboard.stripe.com/apikeys
+2. Toggle to "Live" mode
+3. Copy live keys
+4. Update in Vercel:
+   - `STRIPE_SECRET_KEY` = `sk_live_...`
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` = `pk_live_...`
+5. Create webhook for `https://your-app.vercel.app/api/webhooks/stripe`
+6. Update `STRIPE_WEBHOOK_SECRET`
+7. Redeploy
+
+### Resend Email (Optional)
+
+1. Go to https://resend.com/
+2. Create account
+3. Get API key
+4. Add to Vercel:
+   - `RESEND_API_KEY` = `re_...`
+   - `EMAIL_FROM` = `noreply@yourdomain.com` (requires domain verification)
+5. Redeploy
+
+### Custom Domain
+
+1. Vercel Dashboard → Your Project → Settings → Domains
+2. Add your domain
+3. Update DNS records as instructed
+4. Update `NEXTAUTH_URL` to your custom domain
+5. Redeploy
 
 ---
 
-## ✅ Summary
+## 📝 Environment Variables Reference
 
-**Total deployment time: ~30 minutes**
+| Variable                             | Required    | Description                | Example                                          |
+| ------------------------------------ | ----------- | -------------------------- | ------------------------------------------------ |
+| `DATABASE_URL`                       | ✅ Yes      | Neon PostgreSQL connection | `postgresql://user:pass@host/db?sslmode=require` |
+| `AUTH_SECRET`                        | ✅ Yes      | NextAuth JWT secret        | Generated with `openssl rand -base64 32`         |
+| `NEXTAUTH_URL`                       | ✅ Yes      | Your app URL               | `https://your-app.vercel.app`                    |
+| `STRIPE_SECRET_KEY`                  | ✅ Yes      | Stripe secret key          | `sk_test_...` or `sk_live_...`                   |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | ✅ Yes      | Stripe public key          | `pk_test_...` or `pk_live_...`                   |
+| `STRIPE_WEBHOOK_SECRET`              | ✅ Yes      | Stripe webhook secret      | `whsec_...`                                      |
+| `CLOUDINARY_CLOUD_NAME`              | ✅ Yes      | Cloudinary cloud name      | Your cloud name                                  |
+| `CLOUDINARY_API_KEY`                 | ✅ Yes      | Cloudinary API key         | Your API key                                     |
+| `CLOUDINARY_API_SECRET`              | ✅ Yes      | Cloudinary API secret      | Your API secret                                  |
+| `EMAIL_FROM`                         | ⚠️ Optional | Email sender address       | `onboarding@resend.dev`                          |
+| `RESEND_API_KEY`                     | ❌ Optional | Resend API key             | `re_...`                                         |
 
-1. ✅ Prepare project (5 min)
-2. ✅ Setup Neon database (5 min)
-3. ✅ Deploy to Vercel (10 min)
-4. ✅ Run migrations (5 min)
-5. ✅ Verify & test (5 min)
+---
 
-**Cost: $0/month** for free tier limits!
+## 🎉 Success!
+
+Your e-commerce application is now live in production!
+
+**What you have:**
+
+- ✅ Fully functional e-commerce platform
+- ✅ Secure authentication
+- ✅ Payment processing (Stripe)
+- ✅ Image uploads (Cloudinary)
+- ✅ Admin dashboard
+- ✅ Order management
+- ✅ Product reviews
+- ✅ Wishlist functionality
 
 **Next steps:**
 
-- Monitor usage in Vercel/Neon dashboards
-- Add custom domain
-- Enable analytics
-- Setup error tracking (Sentry)
-- Plan for scaling when needed
+1. Test all functionality thoroughly
+2. Create real products
+3. Configure Stripe webhook for production
+4. Add custom domain (optional)
+5. Enable Vercel Analytics
+6. Monitor errors in Vercel logs
 
 ---
 
-**Status:** Ready for production! 🚀
-**Updated:** January 2026
+## 📚 Additional Resources
+
+- [Vercel Documentation](https://vercel.com/docs)
+- [Neon Documentation](https://neon.tech/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Stripe Documentation](https://stripe.com/docs)
+
+---
+
+**Need Help?**
+
+- Check Vercel logs: Dashboard → Deployments → Logs
+- Check Neon monitoring: Dashboard → Monitoring
+- Review this guide's "Common Issues & Solutions" section
