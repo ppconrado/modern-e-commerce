@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const updateOrderSchema = z.object({
-  status: z.enum(['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELED']),
+  status: z.enum([
+    'PENDING',
+    'PROCESSING',
+    'SHIPPED',
+    'DELIVERED',
+    'CANCELLED',
+  ]),
 });
 
 // GET /api/admin/orders/[id] - Get single order with full details

@@ -23,7 +23,7 @@ type OrderStatus =
   | 'PROCESSING'
   | 'SHIPPED'
   | 'DELIVERED'
-  | 'CANCELED';
+  | 'CANCELLED';
 
 interface Order {
   id: string;
@@ -54,7 +54,7 @@ const statusColors: Record<OrderStatus, string> = {
   PROCESSING: 'bg-blue-100 text-blue-800',
   SHIPPED: 'bg-purple-100 text-purple-800',
   DELIVERED: 'bg-green-100 text-green-800',
-  CANCELED: 'bg-red-100 text-red-800',
+  CANCELLED: 'bg-red-100 text-red-800',
 };
 
 export default function OrdersPage() {
@@ -158,7 +158,7 @@ export default function OrdersPage() {
               <SelectItem value="PROCESSING">Processing</SelectItem>
               <SelectItem value="SHIPPED">Shipped</SelectItem>
               <SelectItem value="DELIVERED">Delivered</SelectItem>
-              <SelectItem value="CANCELED">Canceled</SelectItem>
+              <SelectItem value="CANCELLED">Canceled</SelectItem>
             </SelectContent>
           </Select>
         </CardContent>
@@ -245,7 +245,7 @@ export default function OrdersPage() {
                         <SelectItem value="PROCESSING">Processing</SelectItem>
                         <SelectItem value="SHIPPED">Shipped</SelectItem>
                         <SelectItem value="DELIVERED">Delivered</SelectItem>
-                        <SelectItem value="CANCELED">Canceled</SelectItem>
+                        <SelectItem value="CANCELLED">Canceled</SelectItem>
                       </SelectContent>
                     </Select>
 
