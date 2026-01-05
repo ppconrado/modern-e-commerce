@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingCart, LogOut, User, Heart } from 'lucide-react';
+import { ShoppingCart, LogOut, User, Heart, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart';
 import { Button } from './ui/button';
@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 
 export function Header() {
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { data: session } = useSession();
 
@@ -31,13 +32,15 @@ export function Header() {
   }, []);
 
   return (
-    <header className="border-b">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold">
+    <header className="border-b sticky top-0 bg-white z-50">
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="text-xl md:text-2xl font-bold">
           ShopHub
         </Link>
 
-        <nav className="flex items-center gap-6">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
           <Link href="/" className="text-sm font-medium hover:underline">
             Products
           </Link>
@@ -124,7 +127,136 @@ export function Header() {
             </Button>
           </Link>
         </nav>
+
+        {/* Mobile Icons + Hamburger */}
+        <div className="flex md:hidden items-center gap-2">
+          {/* Wishlist - Mobile */}
+          {session && (
+            <Link href="/wishlist" className="relative">
+              <Button variant="ghost" size="icon">
+                <Heart className="h-5 w-5" />
+                {mounted && wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
+
+          {/* Cart - Mobile */}
+          <Link href="/cart" className="relative">
+            <Button variant="ghost" size="icon">
+              <ShoppingCart className="h-5 w-5" />
+              {mounted && totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
+          </Link>
+
+          {/* Hamburger Menu */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </Button>
+        </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-white">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            <Link
+              href="/"
+              className="text-sm font-medium hover:underline"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Products
+            </Link>
+
+            {(session?.user?.role === 'ADMIN' ||
+              session?.user?.role === 'SUPER_ADMIN') && (
+              <Link
+                href="/admin"
+                className="text-sm font-medium hover:underline"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
+
+            {session?.user?.role === 'SUPER_ADMIN' && (
+              <Link
+                href="/admin/users"
+                className="text-sm font-medium hover:underline"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Users
+              </Link>
+            )}
+
+            {session ? (
+              <>
+                <Link
+                  href="/account"
+                  className="text-sm font-medium hover:underline"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Account
+                </Link>
+                <div className="text-sm text-gray-600 py-2 border-t">
+                  <User className="inline h-4 w-4 mr-2" />
+                  {session.user?.name}
+                  {session.user?.role === 'SUPER_ADMIN' && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full">
+                      SUPER ADMIN
+                    </span>
+                  )}
+                  {session.user?.role === 'ADMIN' && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut({ callbackUrl: '/' });
+                  }}
+                  className="w-full"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button size="sm" className="w-full">
+                    Sign up
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
