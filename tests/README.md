@@ -4,8 +4,25 @@
 
 Comprehensive testing guide for the e-commerce application, including automated E2E tests with Playwright and manual testing checklists for all features.
 
+## 🎯 Quick Start
+
+### Production Tests (Recommended)
+
+```bash
+npm run test:prod              # Run production health checks
+npm run test:report:prod       # View results in browser
+```
+
+### Local Tests
+
+```bash
+npm run test:local             # Run local development tests
+npm run test:report            # View local test report
+```
+
 ## Table of Contents
 
+- [Production Testing](#production-testing) ⭐ NEW
 - [Prerequisites](#prerequisites)
 - [Automated Tests (Playwright)](#automated-tests-playwright)
 - [Manual Testing Checklists](#manual-testing-checklists)
@@ -13,6 +30,54 @@ Comprehensive testing guide for the e-commerce application, including automated 
   - [E2E Flow Testing](#e2e-flow-testing)
 - [Test Credentials](#test-credentials)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Production Testing
+
+### ✅ Current Status
+
+**25/25 tests passing** on production environment (`https://josepaulo-e-commerce.vercel.app/`)
+
+- ✅ Homepage loads successfully
+- ✅ Cart page loads successfully
+- ✅ Login page loads successfully
+- ✅ Register page loads successfully
+- ✅ API products endpoint returns data
+
+**Browsers tested:** Chrome, Firefox, Safari, Mobile Chrome, Mobile Safari
+
+### Running Production Tests
+
+```bash
+# Run all production tests
+npm run test:prod
+
+# Run with UI (interactive mode)
+npm run test:prod:ui
+
+# View HTML report
+npm run test:report:prod
+```
+
+### Production Test Configuration
+
+Located at `playwright.config.production.ts`:
+
+- **Base URL:** `https://josepaulo-e-commerce.vercel.app`
+- **Test Directory:** `tests/production/`
+- **Retries:** 2 (for flaky test resilience)
+- **Workers:** 4 (parallel execution)
+- **Artifacts:** Screenshots, videos, traces on failure
+
+### When to Use Production Tests
+
+- ✅ Before deploying new changes
+- ✅ After deploying to verify production
+- ✅ Regular health checks (daily/weekly)
+- ✅ Validating cross-browser compatibility
+
+For complete production testing documentation, see [TESTING_STRATEGY.md](../TESTING_STRATEGY.md)
 
 ---
 
@@ -52,12 +117,40 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="your-stripe-publishable"
 
 ## Automated Tests (Playwright)
 
+### Test Environments
+
+#### 1. Production Tests (`tests/production/`)
+
+- **Purpose:** Validate production deployment
+- **Target:** `https://josepaulo-e-commerce.vercel.app`
+- **Type:** Health checks (fast, simple)
+- **Run:** `npm run test:prod`
+
+#### 2. Local Tests (`tests/`)
+
+- **Purpose:** Full E2E testing during development
+- **Target:** `http://localhost:3000`
+- **Type:** Comprehensive user flows
+- **Run:** `npm run test:local`
+
 ## Running Tests
+
+### Production Tests (Recommended First)
+
+```bash
+# Run production health checks
+npm run test:prod
+
+# View results
+npm run test:report:prod
+```
+
+### Local Development Tests
 
 ### Run all tests
 
 ```bash
-npm run test
+npm run test:local
 ```
 
 ### Run tests in UI mode (recommended for development)
@@ -88,14 +181,42 @@ npx playwright test --project=webkit
 
 ## Test Coverage
 
-### Unauthenticated User Tests
+### Production Health Checks (`tests/production/`)
+
+**5 tests × 5 browsers = 25 test executions**
+
+1. **Homepage Test**
+
+   - Verifies page loads (200 status)
+   - Checks "Featured Products" heading visible
+
+2. **Cart Page Test**
+
+   - Verifies page loads (200 status)
+   - Checks heading visible (handles empty/full cart states)
+
+3. **Login Page Test**
+
+   - Verifies page loads (200 status)
+
+4. **Register Page Test**
+
+   - Verifies page loads (200 status)
+
+5. **API Products Test**
+   - Verifies endpoint returns success
+   - Validates response is an array
+
+**Browsers:** Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari
+
+### Local E2E Tests (Unauthenticated User)
 
 - ✅ Display products on home page
 - ✅ Add product to cart (Zustand store)
 - ✅ Navigate to cart page
 - ✅ Require login for checkout
 
-### Authenticated User Tests
+### Local E2E Tests (Authenticated User)
 
 - ✅ Access checkout page when authenticated
 - ✅ Show address selection on checkout
