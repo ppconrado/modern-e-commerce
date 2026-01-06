@@ -11,6 +11,7 @@ dist
 *.log
 test-results/
 playwright-report/
+playwright-report-production/
 playwright/.cache/
 stripe.exe
 
