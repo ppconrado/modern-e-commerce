@@ -218,8 +218,8 @@ export default function ProductsManagementPage() {
                         <span
                           className={
                             product.stock > 0
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                              ? 'text-green-600 font-bold'
+                              : 'text-red-600 font-bold'
                           }
                         >
                           Stock: {product.stock}
