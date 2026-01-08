@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <span className="opacity-70">No reviews yet</span>
             )}
           </div>
-          <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
+          <span className="text-xs font-black px-2 py-1 rounded-full bg-muted text-muted-foreground">
             {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
           </span>
         </div>
