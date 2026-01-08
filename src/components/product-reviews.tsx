@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,14 +38,20 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
 
-  useEffect(() => {
-    fetchReviews();
-    if (session?.user?.id) {
-      checkIfPurchased();
+  const fetchReviews = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/products/${productId}/reviews`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
+      const data = await response.json();
+      setReviews(data.reviews);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [productId, session]);
+  }, [productId]);
 
-  const checkIfPurchased = async () => {
+  const checkIfPurchased = useCallback(async () => {
     setCheckingPurchase(true);
     try {
       const response = await fetch('/api/orders');
@@ -65,20 +71,14 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     } finally {
       setCheckingPurchase(false);
     }
-  };
+  }, [productId]);
 
-  const fetchReviews = async () => {
-    try {
-      const response = await fetch(`/api/products/${productId}/reviews`);
-      if (!response.ok) throw new Error('Failed to fetch reviews');
-      const data = await response.json();
-      setReviews(data.reviews);
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    fetchReviews();
+    if (session?.user?.id) {
+      checkIfPurchased();
     }
-  };
+  }, [productId, session, fetchReviews, checkIfPurchased]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

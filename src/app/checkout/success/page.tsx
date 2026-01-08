@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,23 +21,7 @@ function CheckoutSuccessContent() {
   const [error, setError] = useState<string | null>(null);
   const [orderCreated, setOrderCreated] = useState(false);
 
-  useEffect(() => {
-    // Check if payment was successful
-    if (redirectStatus === 'failed') {
-      setError('Payment failed. Please try again.');
-      setLoading(false);
-      return;
-    }
-
-    // Clear cart and create order
-    if (redirectStatus === 'succeeded' && paymentIntent) {
-      handleSuccessfulPayment();
-    } else {
-      setLoading(false);
-    }
-  }, [redirectStatus, paymentIntent]);
-
-  const handleSuccessfulPayment = async () => {
+  const handleSuccessfulPayment = useCallback(async () => {
     try {
       // Get order data from sessionStorage (saved during checkout)
       const orderDataStr = sessionStorage.getItem('pendingOrder');
@@ -72,7 +56,23 @@ function CheckoutSuccessContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [paymentIntent, clearCart]);
+
+  useEffect(() => {
+    // Check if payment was successful
+    if (redirectStatus === 'failed') {
+      setError('Payment failed. Please try again.');
+      setLoading(false);
+      return;
+    }
+
+    // Clear cart and create order
+    if (redirectStatus === 'succeeded' && paymentIntent) {
+      handleSuccessfulPayment();
+    } else {
+      setLoading(false);
+    }
+  }, [redirectStatus, paymentIntent, handleSuccessfulPayment]);
 
   if (loading) {
     return (

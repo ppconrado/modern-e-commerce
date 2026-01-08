@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { loadStripe } from '@stripe/stripe-js';
@@ -131,18 +131,7 @@ export default function CheckoutPage() {
     phone: '',
   });
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/checkout');
-      return;
-    }
-
-    if (status === 'authenticated') {
-      loadData();
-    }
-  }, [status, router]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // Check if cart has items
       if (cartItems.length === 0) {
@@ -171,7 +160,13 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cartItems, router]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      loadData();
+    }
+  }, [status, loadData]);
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
