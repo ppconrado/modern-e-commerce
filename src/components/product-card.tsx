@@ -47,7 +47,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
       <Link href={`/products/${product.id}`}>
         <CardHeader className="p-0 cursor-pointer">
           <div className="relative h-48 w-full">
@@ -63,7 +63,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </CardHeader>
       </Link>
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1 flex flex-col gap-2">
         <Link href={`/products/${product.id}`}>
           <div className="flex items-start justify-between mb-2 cursor-pointer">
             <CardTitle className="text-lg hover:text-primary transition-colors">
@@ -77,22 +77,26 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="text-sm text-muted-foreground line-clamp-2">
           {product.description}
         </p>
-        <div className="flex items-center justify-between mt-2">
-          <StarRating
-            rating={product.averageRating || 0}
-            size={16}
-            showNumber={false}
-          />
-          <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <StarRating
+              rating={product.averageRating || 0}
+              size={16}
+              showNumber={false}
+            />
+            {product.reviewCount && product.reviewCount > 0 ? (
+              <span>
+                {product.reviewCount}{' '}
+                {product.reviewCount === 1 ? 'review' : 'reviews'}
+              </span>
+            ) : (
+              <span className="opacity-70">No reviews yet</span>
+            )}
+          </div>
+          <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
             {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-          </p>
+          </span>
         </div>
-        {(product.reviewCount ?? 0) > 0 && (
-          <p className="text-xs text-gray-500 mt-1">
-            ({product.reviewCount}{' '}
-            {product.reviewCount === 1 ? 'review' : 'reviews'})
-          </p>
-        )}
       </CardContent>
       <CardFooter className="p-4 pt-0">
         {cartItem ? (
