@@ -14,7 +14,7 @@ export function Toaster() {
   const { toasts } = useToast();
 
   return (
-    <ToastProvider>
+    <ToastProvider duration={1000}>
       {toasts.map(function ({ id, title, description, action, open, ...props }) {
         return (
           <Toast key={id} open={open} onOpenChange={(newOpen) => !newOpen && id} {...props}>
