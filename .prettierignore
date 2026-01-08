@@ -1,0 +1,17 @@
+# Ignore artifacts:
+.next
+dist
+build
+coverage
+node_modules
+.vercel
+
+# Ignore all files:
+*.log
+*.lock
+.DS_Store
+
+# Specific files
+.env
+.env.local
+.env.*.local
