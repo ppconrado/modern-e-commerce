@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Loader2,
@@ -172,11 +173,14 @@ export default function OrdersPage() {
                   <div className="space-y-4 mb-6">
                     {order.OrderItem.map((item) => (
                       <div key={item.id} className="flex gap-4">
-                        <img
-                          src={item.Product.image}
-                          alt={item.Product.name}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
+                        <div className="relative w-20 h-20">
+                          <Image
+                            src={item.Product.image}
+                            alt={item.Product.name}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
                         <div className="flex-1">
                           <h3 className="font-medium">{item.Product.name}</h3>
                           <p className="text-sm text-gray-600">

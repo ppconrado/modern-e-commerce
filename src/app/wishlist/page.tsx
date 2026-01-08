@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -112,10 +113,11 @@ export default function WishlistPage() {
             <Card key={item.id} className="overflow-hidden group">
               <div className="relative aspect-square overflow-hidden bg-gray-100">
                 <Link href={`/products/${item.productId}`}>
-                  <img
+                  <Image
                     src={item.product.image}
                     alt={item.product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </Link>
                 <button

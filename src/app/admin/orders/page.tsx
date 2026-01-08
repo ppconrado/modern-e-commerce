@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -211,11 +212,14 @@ export default function OrdersPage() {
                           key={item.id}
                           className="flex items-center gap-3 text-sm"
                         >
-                          <img
-                            src={item.Product.image}
-                            alt={item.Product.name}
-                            className="w-12 h-12 object-cover rounded"
-                          />
+                          <div className="relative w-12 h-12">
+                            <Image
+                              src={item.Product.image}
+                              alt={item.Product.name}
+                              fill
+                              className="object-cover rounded"
+                            />
+                          </div>
                           <div className="flex-1">
                             <p className="font-medium">{item.Product.name}</p>
                             <p className="text-gray-600">

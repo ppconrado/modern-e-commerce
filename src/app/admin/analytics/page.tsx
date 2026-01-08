@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -235,11 +236,14 @@ export default function AnalyticsPage() {
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold">
                   {index + 1}
                 </div>
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-16 h-16 object-cover rounded"
-                />
+                <div className="relative w-16 h-16">
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    className="object-cover rounded"
+                  />
+                </div>
                 <div className="flex-1">
                   <p className="font-medium">{product.name}</p>
                   <p className="text-sm text-gray-600">
@@ -275,11 +279,14 @@ export default function AnalyticsPage() {
                   key={product.id}
                   className="flex items-center gap-4 p-3 border border-orange-200 rounded-lg bg-orange-50"
                 >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-12 h-12 object-cover rounded"
-                  />
+                  <div className="relative w-12 h-12">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      className="object-cover rounded"
+                    />
+                  </div>
                   <div className="flex-1">
                     <p className="font-medium">{product.name}</p>
                     <p className="text-sm text-gray-600">
