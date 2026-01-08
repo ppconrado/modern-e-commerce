@@ -4,12 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { loadStripe } from '@stripe/stripe-js';
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,9 +21,7 @@ import { Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cart';
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface Address {
   id: string;
@@ -94,12 +87,7 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
-      <Button
-        type="submit"
-        disabled={!stripe || processing}
-        className="w-full"
-        size="lg"
-      >
+      <Button type="submit" disabled={!stripe || processing} className="w-full" size="lg">
         {processing ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -364,11 +352,7 @@ export default function CheckoutPage() {
                   Shipping Address
                 </CardTitle>
                 {!showAddressForm && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddressForm(true)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => setShowAddressForm(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add New
                   </Button>
@@ -382,9 +366,7 @@ export default function CheckoutPage() {
                     <Label>Address Type</Label>
                     <Select
                       value={formData.type}
-                      onValueChange={(value: any) =>
-                        setFormData({ ...formData, type: value })
-                      }
+                      onValueChange={(value: any) => setFormData({ ...formData, type: value })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -398,14 +380,10 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <Label>
-                      Label (e.g., &quot;Home&quot;, &quot;Office&quot;)
-                    </Label>
+                    <Label>Label (e.g., &quot;Home&quot;, &quot;Office&quot;)</Label>
                     <Input
                       value={formData.label}
-                      onChange={(e) =>
-                        setFormData({ ...formData, label: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, label: e.target.value })}
                       required
                     />
                   </div>
@@ -414,9 +392,7 @@ export default function CheckoutPage() {
                     <Label>Street Address</Label>
                     <Input
                       value={formData.address}
-                      onChange={(e) =>
-                        setFormData({ ...formData, address: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       required
                     />
                   </div>
@@ -426,9 +402,7 @@ export default function CheckoutPage() {
                       <Label>City</Label>
                       <Input
                         value={formData.city}
-                        onChange={(e) =>
-                          setFormData({ ...formData, city: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                         required
                       />
                     </div>
@@ -436,9 +410,7 @@ export default function CheckoutPage() {
                       <Label>ZIP Code</Label>
                       <Input
                         value={formData.zipCode}
-                        onChange={(e) =>
-                          setFormData({ ...formData, zipCode: e.target.value })
-                        }
+                        onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                         required
                       />
                     </div>
@@ -448,9 +420,7 @@ export default function CheckoutPage() {
                     <Label>Phone (optional)</Label>
                     <Input
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
                   </div>
 
@@ -485,9 +455,7 @@ export default function CheckoutPage() {
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold">
-                                {address.label}
-                              </span>
+                              <span className="font-semibold">{address.label}</span>
                               <span className="text-xs px-2 py-0.5 bg-secondary rounded-full">
                                 {address.type}
                               </span>
@@ -497,16 +465,12 @@ export default function CheckoutPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {address.address}
-                            </p>
+                            <p className="text-sm text-muted-foreground">{address.address}</p>
                             <p className="text-sm text-muted-foreground">
                               {address.city}, {address.zipCode}
                             </p>
                             {address.phone && (
-                              <p className="text-sm text-muted-foreground">
-                                {address.phone}
-                              </p>
+                              <p className="text-sm text-muted-foreground">{address.phone}</p>
                             )}
                           </div>
                           <Button
@@ -548,12 +512,8 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {item.product.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Qty: {item.quantity}
-                      </p>
+                      <p className="font-medium text-sm truncate">{item.product.name}</p>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                       <p className="text-sm font-semibold">
                         ${(item.product.price * item.quantity).toFixed(2)}
                       </p>
