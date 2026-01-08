@@ -163,10 +163,16 @@ export default function CheckoutPage() {
   }, [cartItems, router]);
 
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/checkout');
+      setLoading(false);
+      return;
+    }
+
     if (status === 'authenticated') {
       loadData();
     }
-  }, [status, loadData]);
+  }, [status, loadData, router]);
 
   const handleAddAddress = async (e: React.FormEvent) => {
     e.preventDefault();
