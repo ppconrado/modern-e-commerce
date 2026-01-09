@@ -48,6 +48,20 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
     e.preventDefault();
 
     if (!stripe || !elements) {
+      toast({
+        title: 'Payment Error',
+        description: 'Stripe has not loaded yet. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!clientSecret) {
+      toast({
+        title: 'Payment Error',
+        description: 'Payment session not initialized. Please refresh and try again.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -65,9 +79,13 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
 
       if (result.error) {
         console.error('Stripe payment error:', result.error);
+        const errorMessage = result.error.message || 
+          result.error.type || 
+          'Payment failed. Please check your payment details and try again.';
+        
         toast({
           title: 'Payment failed',
-          description: result.error.message,
+          description: errorMessage,
           variant: 'destructive',
         });
         setProcessing(false);
@@ -77,7 +95,7 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
       console.error('Payment exception:', err);
       toast({
         title: 'Payment failed',
-        description: 'An unexpected error occurred',
+        description: err instanceof Error ? err.message : 'An unexpected error occurred',
         variant: 'destructive',
       });
       setProcessing(false);
@@ -104,7 +122,7 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { items: cartItems, cartId, getTotalPrice, applyCoupon, removeCoupon, couponCode } =
+  const { items: cartItems, cartId, getTotalPrice, applyCoupon, removeCoupon, couponCode, subtotal, discountAmount, total } =
     useCart();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
@@ -340,8 +358,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const total = getTotalPrice();
-
   if (loading || status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -567,22 +583,30 @@ export default function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
-                  <span>${getTotalPrice().toFixed(2)}</span>
+                  <span>${(subtotal || getTotalPrice()).toFixed(2)}</span>
                 </div>
 
                 {/* Coupon Section */}
                 <div className="space-y-2">
                   {couponCode ? (
-                    <div className="flex justify-between text-sm items-center">
-                      <span className="text-green-600 font-medium">{couponCode}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRemoveCoupon}
-                      >
-                        Remove
-                      </Button>
-                    </div>
+                    <>
+                      <div className="flex justify-between text-sm items-center">
+                        <span className="text-green-600 font-medium">{couponCode}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveCoupon}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Discount</span>
+                          <span>-${discountAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="flex gap-2">
                       <Input
@@ -608,7 +632,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span>${getTotalPrice().toFixed(2)}</span>
+                  <span>${(total || getTotalPrice()).toFixed(2)}</span>
                 </div>
               </div>
 

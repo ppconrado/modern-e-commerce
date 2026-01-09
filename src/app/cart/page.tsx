@@ -20,11 +20,9 @@ import { toast } from '@/hooks/use-toast';
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, removeFromCart, updateItemQuantity, getTotalPrice } =
+  const { items, removeFromCart, updateItemQuantity, getTotalPrice, subtotal, discountAmount, total, couponCode } =
     useCart();
   const [orderComplete, setOrderComplete] = useState(false);
-
-  const totalPrice = getTotalPrice();
 
   const handleRemoveItem = async (productId: string, productName: string) => {
     const result = await removeFromCart(productId);
@@ -150,20 +148,18 @@ export default function CartPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>{formatCurrency(totalPrice)}</span>
+                <span>{formatCurrency(subtotal || getTotalPrice())}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span>Shipping</span>
-                <span>FREE</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Tax</span>
-                <span>{formatCurrency(totalPrice * 0.1)}</span>
-              </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount {couponCode && `(${couponCode})`}</span>
+                  <span>-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
               <div className="border-t pt-4">
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>{formatCurrency(totalPrice * 1.1)}</span>
+                  <span>{formatCurrency(total || getTotalPrice())}</span>
                 </div>
               </div>
               <Button
