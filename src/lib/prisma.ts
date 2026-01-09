@@ -9,11 +9,16 @@ const globalForPrisma = globalThis as unknown as {
 
 // Create pool if not exists
 if (!globalForPrisma.pool) {
+  // Determine SSL configuration based on environment
+  const isDevelopment = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL?.includes('neon');
+  
   globalForPrisma.pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    ...(isDevelopment ? {} : {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    }),
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
