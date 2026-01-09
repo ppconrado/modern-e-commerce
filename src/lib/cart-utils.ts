@@ -1,20 +1,29 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function getOrCreateCart(anonymousCartId?: string) {
+/**
+ * Obtém ou cria um carrinho para o usuário (autenticado ou anônimo)
+ * @param anonymousCartId - ID do carrinho anônimo (se aplicável)
+ * @param includeItems - Se deve incluir items (apenas quando necessário para evitar N+1 queries)
+ */
+export async function getOrCreateCart(anonymousCartId?: string, includeItems = false) {
   const session = await auth();
+
+  const cartInclude = includeItems 
+    ? { items: { include: { product: true } } }
+    : undefined;
 
   if (session?.user?.id) {
     // Usuário autenticado
     let cart = await prisma.cart.findUnique({
       where: { userId: session.user.id },
-      include: { items: { include: { product: true } } },
+      include: cartInclude,
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
         data: { userId: session.user.id },
-        include: { items: { include: { product: true } } },
+        include: cartInclude,
       });
     }
 
@@ -25,13 +34,13 @@ export async function getOrCreateCart(anonymousCartId?: string) {
 
     let cart = await prisma.cart.findUnique({
       where: { anonymousId },
-      include: { items: { include: { product: true } } },
+      include: cartInclude,
     });
 
     if (!cart) {
       cart = await prisma.cart.create({
         data: { anonymousId },
-        include: { items: { include: { product: true } } },
+        include: cartInclude,
       });
     }
 

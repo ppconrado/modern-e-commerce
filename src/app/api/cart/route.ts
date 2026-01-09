@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/cart - Adicionar item ao carrinho
+// OTIMIZADO: Reduzido de 7 para 2-3 queries usando upsert
 export async function POST(req: NextRequest) {
   try {
     const { productId, quantity, anonymousId } = await req.json();
@@ -73,9 +74,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+    // Query 1: Verificar produto e obter/criar carrinho em paralelo
+    const [product, cartResult] = await Promise.all([
+      prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, price: true, stock: true },
+      }),
+      getOrCreateCart(anonymousId, false),
+    ]);
 
     if (!product) {
       return NextResponse.json(
@@ -91,35 +97,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cartResult = await getOrCreateCart(anonymousId);
     const { cart, isAnonymous } = cartResult;
     const returnedAnonymousId = isAnonymous ? cartResult.anonymousId : null;
 
-    const existingItem = await prisma.cartItem.findUnique({
+    // Query 2: Upsert item (criar ou atualizar quantidade)
+    const cartItem = await prisma.cartItem.upsert({
       where: { cartId_productId: { cartId: cart.id, productId } },
+      update: { quantity: { increment: quantity } },
+      create: {
+        cartId: cart.id,
+        productId,
+        quantity,
+        price: product.price,
+      },
+      include: { product: true },
     });
 
-    let cartItem;
-
-    if (existingItem) {
-      cartItem = await prisma.cartItem.update({
-        where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity },
-        include: { product: true },
-      });
-    } else {
-      cartItem = await prisma.cartItem.create({
-        data: {
-          cartId: cart.id,
-          productId,
-          quantity,
-          price: product.price,
-        },
-        include: { product: true },
-      });
-    }
-
-    // Recalcular totais
+    // Query 3: Recalcular totais
     const updatedCart = await recalculateCartTotals(cart.id);
 
     return NextResponse.json({ 
@@ -128,7 +122,7 @@ export async function POST(req: NextRequest) {
       anonymousId: returnedAnonymousId
     });
   } catch (error) {
-    console.error('Error adding to cart:', error);
+    console.error('Error adding to cart:', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: 'Erro ao adicionar ao carrinho' },
       { status: 500 }
