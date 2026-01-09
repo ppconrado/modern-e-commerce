@@ -90,9 +90,13 @@ const products = [
 async function main() {
   console.log('Start seeding...');
 
-  // Clear existing data
+  // Clear existing data (in correct order to avoid FK conflicts)
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();  // ← Clear cart items first
+  await prisma.couponUsage.deleteMany();  // ← Clear coupon usages
+  await prisma.cart.deleteMany();  // ← Then carts
+  await prisma.coupon.deleteMany();  // ← Then coupons
   await prisma.product.deleteMany();
   await prisma.user.deleteMany();
 
@@ -137,6 +141,83 @@ async function main() {
   console.log(
     `Created users: ${user1.fullName}, ${user2.fullName}, ${testUser.fullName}`
   );
+
+  // Create test coupons
+  const coupon1 = await prisma.coupon.create({
+    data: {
+      code: 'WELCOME10',
+      description: '10% welcome discount on first purchase',
+      discountType: 'PERCENTAGE',
+      discountValue: 10,
+      maxUses: null,
+      minimumAmount: 0,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      isActive: true,
+    },
+  });
+  console.log(`Created coupon: ${coupon1.code}`);
+
+  const coupon2 = await prisma.coupon.create({
+    data: {
+      code: 'SAVE10',
+      description: '10% discount on any purchase',
+      discountType: 'PERCENTAGE',
+      discountValue: 10,
+      maxUses: null,
+      minimumAmount: 0,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      isActive: true,
+    },
+  });
+  console.log(`Created coupon: ${coupon2.code}`);
+
+  const coupon3 = await prisma.coupon.create({
+    data: {
+      code: 'SAVE50',
+      description: '$50 discount on orders over $200',
+      discountType: 'FIXED',
+      discountValue: 50,
+      maxUses: 10,
+      minimumAmount: 200,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      isActive: true,
+    },
+  });
+  console.log(`Created coupon: ${coupon3.code}`);
+
+  const coupon4 = await prisma.coupon.create({
+    data: {
+      code: 'NEWYEAR20',
+      description: '20% discount for New Year celebration',
+      discountType: 'PERCENTAGE',
+      discountValue: 20,
+      maxUses: 50,
+      minimumAmount: 100,
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-01-31'),
+      isActive: true,
+    },
+  });
+  console.log(`Created coupon: ${coupon4.code}`);
+
+  const coupon5 = await prisma.coupon.create({
+    data: {
+      code: 'TECH25',
+      description: '25% off electronics category',
+      discountType: 'PERCENTAGE',
+      discountValue: 25,
+      maxUses: 100,
+      minimumAmount: 50,
+      applicableCategories: JSON.stringify(['Electronics']),
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2026-12-31'),
+      isActive: true,
+    },
+  });
+  console.log(`Created coupon: ${coupon5.code}`);
 
   console.log('Seeding finished.');
 }
