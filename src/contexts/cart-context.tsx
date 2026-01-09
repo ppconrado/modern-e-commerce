@@ -41,13 +41,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const res = await fetch('/api/cart');
           if (res.ok) {
             const data = await res.json();
-            console.log('[CartProvider] User cart loaded:', data);
             if (data.cart) {
               setCart(data.cart);
               setCartId(data.cart.id);
             }
-          } else {
-            console.error('[CartProvider] Failed to load user cart:', await res.text());
           }
         } else {
           // Usuário NÃO logado - verificar se acabou de fazer logout
@@ -61,21 +58,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setCartId('', newAnonId);
           } else {
             // Há ID anônimo - tentar recuperar carrinho
-            console.log('[CartProvider] Fetching anonymous cart:', savedAnonId);
             const res = await fetch(`/api/cart?cartId=${savedAnonId}`);
             if (res.ok) {
               const data = await res.json();
-              console.log('[CartProvider] Anonymous cart response:', data);
               if (data.cart) {
                 setCart(data.cart);
                 setCartId(data.cart.id, data.cart.anonymousId || data.anonymousId);
               } else {
                 // Carrinho não existe - limpar
-                console.log('[CartProvider] No cart found, clearing');
                 clearCart();
               }
-            } else {
-              console.error('[CartProvider] Failed to fetch anonymous cart:', await res.text());
             }
           }
         }
@@ -110,7 +102,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        console.log('[addToCart] Sending request:', { productId: product.id, quantity, anonymousId });
         const response = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,10 +112,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }),
         });
 
-        console.log('[addToCart] Response status:', response.status);
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('[addToCart] Error response:', errorText);
           let error;
           try {
             error = JSON.parse(errorText);
@@ -135,7 +124,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         const responseData = await response.json();
-        console.log('[addToCart] Success response:', responseData);
         const { cart, anonymousId: newAnonymousId } = responseData;
         
         // Se recebeu um novo anonymousId, salvar no localStorage
