@@ -131,6 +131,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [couponInput, setCouponInput] = useState('');
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string>('');
   const [formData, setFormData] = useState({
     type: 'SHIPPING' as 'HOME' | 'SHIPPING' | 'BILLING',
     label: '',
@@ -255,28 +256,28 @@ export default function CheckoutPage() {
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a coupon code',
-        variant: 'destructive',
-      });
+      setCouponError('Please enter a coupon code');
       return;
     }
 
+    setCouponError('');
     setApplyingCoupon(true);
     const result = await applyCoupon(couponInput);
     setApplyingCoupon(false);
 
     if (result.success) {
+      setCouponInput('');
+      setCouponError('');
       toast({
         title: 'Success',
         description: 'Coupon applied successfully',
       });
-      setCouponInput('');
     } else {
+      const errorMsg = result.error || 'Failed to apply coupon';
+      setCouponError(errorMsg);
       toast({
-        title: 'Error',
-        description: result.error || 'Failed to apply coupon',
+        title: 'Coupon Error',
+        description: errorMsg,
         variant: 'destructive',
       });
     }
@@ -608,20 +609,29 @@ export default function CheckoutPage() {
                       )}
                     </>
                   ) : (
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Coupon code"
-                        value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value)}
-                        disabled={applyingCoupon}
-                      />
-                      <Button
-                        onClick={handleApplyCoupon}
-                        disabled={applyingCoupon || !couponInput.trim()}
-                        variant="outline"
-                      >
-                        {applyingCoupon ? 'Applying...' : 'Apply'}
-                      </Button>
+                    <div className="space-y-1">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Coupon code"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value);
+                            setCouponError('');
+                          }}
+                          disabled={applyingCoupon}
+                          className={couponError ? 'border-red-500' : ''}
+                        />
+                        <Button
+                          onClick={handleApplyCoupon}
+                          disabled={applyingCoupon || !couponInput.trim()}
+                          variant="outline"
+                        >
+                          {applyingCoupon ? 'Applying...' : 'Apply'}
+                        </Button>
+                      </div>
+                      {couponError && (
+                        <p className="text-red-500 text-xs font-medium">{couponError}</p>
+                      )}
                     </div>
                   )}
                 </div>

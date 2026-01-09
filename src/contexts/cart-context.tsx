@@ -146,16 +146,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateItemQuantity = useCallback(
     async (productId: string, quantity: number) => {
       try {
-        const { getItemIdByProductId, setCart } = useCartStore.getState();
-        const itemId = getItemIdByProductId(productId);
-        if (!itemId) {
-          throw new Error('Item não encontrado no carrinho');
+        const { anonymousId } = useCartStore.getState();
+
+        // Build request body - only include anonymousId if it exists
+        const body: { productId: string; quantity: number; anonymousId?: string } = { 
+          productId, 
+          quantity 
+        };
+        if (anonymousId) {
+          body.anonymousId = anonymousId;
         }
 
-        const response = await fetch(`/api/cart/${itemId}`, {
-          method: 'PUT',
+        // Call PATCH /api/cart with productId, quantity, and anonymousId if available
+        const response = await fetch(`/api/cart`, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quantity }),
+          body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -164,7 +170,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         const { cart } = await response.json();
-        setCart(cart);
+        useCartStore.getState().setCart(cart);
 
         return { success: true, cart };
       } catch (error: any) {
@@ -178,26 +184,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeFromCart = useCallback(
     async (productId: string) => {
       try {
-        const { items, getItemIdByProductId, setCart } = useCartStore.getState();
-        const itemId = getItemIdByProductId(productId);
+        const { anonymousId } = useCartStore.getState();
         
-        if (!itemId) {
-          // Debug: log items para diagnosticar
-          console.warn('Item not found in store:', { productId, items });
-          throw new Error(`Item ${productId} não encontrado no carrinho`);
+        console.log('🗑️ Remove from cart:', {
+          productId,
+          anonymousId,
+          hasAnonymousId: !!anonymousId,
+          isAuthenticated: !!session?.user?.id,
+          sessionUser: session?.user?.email,
+        });
+
+        // Build request body - only include anonymousId if it exists
+        const body: { productId: string; anonymousId?: string } = { productId };
+        if (anonymousId) {
+          body.anonymousId = anonymousId;
         }
 
-        const response = await fetch(`/api/cart/${itemId}`, {
+        console.log('🗑️ Request body:', body);
+
+        // Call DELETE /api/cart with productId and anonymousId if available
+        const response = await fetch(`/api/cart`, {
           method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
         });
+
+        console.log('🗑️ Response status:', response.status);
 
         if (!response.ok) {
           const error = await response.json();
+          console.error('🗑️ Error response:', error);
           throw new Error(error.error || 'Erro ao remover item');
         }
 
         const { cart } = await response.json();
-        setCart(cart);
+        useCartStore.getState().setCart(cart);
 
         return { success: true, cart };
       } catch (error: any) {
@@ -205,7 +226,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
     },
-    []
+    [session?.user?.id]
   );
 
   const applyCoupon = useCallback(
@@ -218,6 +239,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         // Normalizar código do cupom: remover espaços e padronizar maiúsculas
         const normalizedCode = couponCode.trim().toUpperCase();
+        console.log('🎯 Applying coupon:', { normalizedCode, cartId, appliedCode });
 
         // Idempotência no cliente: se o mesmo cupom já está aplicado, retornar sucesso imediato
         if (appliedCode && appliedCode.toUpperCase() === normalizedCode) {
@@ -234,11 +256,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Erro ao aplicar cupom');
+          let error;
+          let responseText = '';
+          try {
+            // Clonar o response para poder ler o body duas vezes se necessário
+            responseText = await response.clone().text();
+            console.log('📄 Raw response text:', responseText, 'Length:', responseText.length);
+            
+            if (responseText && responseText.trim()) {
+              error = JSON.parse(responseText);
+              console.log('✅ Parsed JSON:', error);
+            } else {
+              console.warn('⚠️ Response text is empty');
+              error = { error: 'Servidor retornou resposta vazia' };
+            }
+          } catch (e) {
+            console.warn('⚠️ Failed to parse error response:', e);
+            console.log('📄 Original responseText:', responseText);
+            error = { error: responseText || 'Erro ao processar resposta do servidor' };
+          }
+          
+          const errorMessage = error?.error || error?.message || String(error) || 'Erro ao aplicar cupom';
+          console.warn('⚠️ API error full:', { error, status: response.status, statusText: response.statusText, message: errorMessage });
+          throw new Error(errorMessage);
         }
 
-        const { cart, coupon } = await response.json();
+        const data = await response.json();
+        console.log('✅ Coupon API response:', data);
+        
+        const { cart, coupon } = data;
         setCart(cart);
         applyStoreCoupon({
           code: coupon.code,
@@ -248,7 +294,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
         return { success: true, cart, coupon };
       } catch (error: any) {
-        console.error('Error applying coupon:', error);
+        console.warn('⚠️ Error applying coupon:', error);
         return { success: false, error: error.message };
       }
     },

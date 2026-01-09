@@ -56,10 +56,12 @@ export function useServerCart() {
   const addToCart = useCallback(
     async (product: Product, quantity: number = 1) => {
       try {
+        // Ensure anonymousId is passed for anonymous users to keep a stable cart
+        const anonId = store.anonymousId || (typeof window !== 'undefined' ? localStorage.getItem('anonCartId') || undefined : undefined);
         const response = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: product.id, quantity }),
+          body: JSON.stringify({ productId: product.id, quantity, anonymousId: anonId }),
         });
 
         if (!response.ok) {
@@ -67,8 +69,15 @@ export function useServerCart() {
           throw new Error(error.error || 'Erro ao adicionar ao carrinho');
         }
 
-        const { cart } = await response.json();
+        const { cart, anonymousId } = await response.json();
         setCart(cart);
+        // Update store/localStorage with anonymousId returned by server (first cart creation)
+        if (anonymousId && !store.cartId) {
+          setCartId(cart.id, anonymousId);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('anonCartId', anonymousId);
+          }
+        }
 
         return { success: true, cart };
       } catch (error: any) {
@@ -76,7 +85,7 @@ export function useServerCart() {
         return { success: false, error: error.message };
       }
     },
-    [setCart]
+    [setCart, setCartId, store.anonymousId, store.cartId]
   );
 
   const updateItemQuantity = useCallback(
