@@ -36,25 +36,27 @@ export async function POST(req: NextRequest) {
         // Create order when payment is successful
         const metadata = paymentIntent.metadata;
 
-        if (!metadata.userId || !metadata.items) {
-          console.error('Missing metadata in payment intent');
+        if (!metadata.userId || !metadata.cartId) {
+          console.error('Missing userId or cartId in payment intent metadata');
           break;
         }
 
-        const items = JSON.parse(metadata.items);
-
-        // Fetch products to get current prices
-        const products = await prisma.product.findMany({
-          where: {
-            id: { in: items.map((item: any) => item.id) },
-          },
+        // Pull items from cart to ensure server-side trusted quantities/prices
+        const cart = await prisma.cart.findUnique({
+          where: { id: metadata.cartId },
+          include: { items: { include: { product: true } } },
         });
 
-        // Create order
+        if (!cart || !cart.items || cart.items.length === 0) {
+          console.error('Cart not found or empty for cartId:', metadata.cartId);
+          break;
+        }
+
+        // Create order with cart snapshot
         const order = await prisma.order.create({
           data: {
             userId: metadata.userId,
-            total: paymentIntent.amount / 100, // Convert from cents
+            total: paymentIntent.amount / 100,
             address: metadata.shippingAddress,
             city: metadata.shippingCity,
             zipCode: metadata.shippingZipCode,
@@ -63,40 +65,31 @@ export async function POST(req: NextRequest) {
             paymentStatus: 'PAID',
             stripePaymentIntentId: paymentIntent.id,
             OrderItem: {
-              create: items.map((item: any) => {
-                const product = products.find((p) => p.id === item.id);
-                return {
-                  productId: item.id,
-                  quantity: item.quantity,
-                  price: product!.price,
-                };
-              }),
+              create: cart.items.map((ci) => ({
+                productId: ci.productId,
+                quantity: ci.quantity,
+                price: ci.price,
+              })),
             },
           },
         });
 
         // Update stock
-        for (const item of items) {
+        for (const ci of cart.items) {
           await prisma.product.update({
-            where: { id: item.id },
+            where: { id: ci.productId },
             data: {
-              stock: {
-                decrement: item.quantity,
-              },
+              stock: { decrement: ci.quantity },
             },
           });
         }
 
         // Clear user's cart after successful payment
-        const userCart = await prisma.cart.findUnique({
-          where: { userId: metadata.userId },
-        });
+        const userCart = await prisma.cart.findUnique({ where: { id: metadata.cartId } });
 
         if (userCart) {
           // Delete all cart items
-          await prisma.cartItem.deleteMany({
-            where: { cartId: userCart.id },
-          });
+          await prisma.cartItem.deleteMany({ where: { cartId: userCart.id } });
 
           // Reset cart totals and remove coupon
           await prisma.cart.update({
@@ -109,7 +102,10 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          console.log(`🛒 Cart cleared for user: ${metadata.userId}`);
+          // Allow future coupon use in this cart by clearing usage records
+          await prisma.couponUsage.deleteMany({ where: { cartId: userCart.id } });
+
+          console.log(`🛒 Cart cleared for user: ${metadata.userId} cartId: ${userCart.id}`);
         }
 
         console.log(`✅ Order created successfully: ${order.id}`);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
+import { getOrCreateCart, recalculateCartTotals } from '@/lib/cart-utils';
 import { auth } from '@/auth';
 
 export async function POST(req: NextRequest) {
@@ -12,11 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { items, shippingInfo } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
-    }
+    const { shippingInfo } = body;
 
     if (
       !shippingInfo?.address ||
@@ -29,71 +26,47 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch products from database to ensure prices are correct
-    const productIds = items.map((item: any) => item.id);
-    const products = await prisma.product.findMany({
-      where: {
-        id: { in: productIds },
-      },
-    });
+    // Get authenticated user's cart and ensure totals are accurate server-side
+    const { cart } = await getOrCreateCart(undefined, true);
 
-    // Verify all products exist
-    if (products.length !== productIds.length) {
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
+    }
+
+    // Recalculate totals to ensure coupon discounts are applied
+    const updatedCart = await recalculateCartTotals(cart.id, cart.items);
+
+    if (!updatedCart) {
       return NextResponse.json(
-        { error: 'Some products not found' },
-        { status: 404 }
+        { error: 'Failed to recalculate cart totals' },
+        { status: 500 }
       );
     }
 
-    // Build line items for Stripe
-    const lineItems = items.map((item: any) => {
-      const product = products.find((p) => p.id === item.id);
-      if (!product) {
-        throw new Error(`Product ${item.id} not found`);
-      }
-
-      return {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: product.name,
-            description: product.description,
-            images: [product.image],
-          },
-          unit_amount: Math.round(product.price * 100), // Convert to cents
-        },
-        quantity: item.quantity,
-      };
-    });
-
-    // Calculate total
-    const total = items.reduce((sum: number, item: any) => {
-      const product = products.find((p) => p.id === item.id);
-      return sum + product!.price * item.quantity;
-    }, 0);
+    const total = updatedCart.total;
 
     // Create Payment Intent (not creating order yet, wait for webhook confirmation)
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100), // Convert to cents
-      currency: 'usd',
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        userId: session.user.id,
-        userEmail: session.user.email || '',
-        items: JSON.stringify(
-          items.map((item: any) => ({
-            id: item.id,
-            quantity: item.quantity,
-          }))
-        ),
-        shippingAddress: shippingInfo.address,
-        shippingCity: shippingInfo.city,
-        shippingZipCode: shippingInfo.zipCode,
-        shippingPhone: shippingInfo.phone || '',
-      },
-    });
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: Math.round(total * 100),
+        currency: 'usd',
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          userId: session.user.id,
+          userEmail: session.user.email || '',
+          cartId: cart.id,
+          subtotal: String(updatedCart.subtotal),
+          discountAmount: String(updatedCart.discountAmount),
+          couponCode: updatedCart.couponCode || '',
+          shippingAddress: shippingInfo.address,
+          shippingCity: shippingInfo.city,
+          shippingZipCode: shippingInfo.zipCode,
+          shippingPhone: shippingInfo.phone || '',
+        },
+      }
+    );
 
     if (!paymentIntent.client_secret) {
       console.error('PaymentIntent created but client_secret is missing:', paymentIntent.id);
