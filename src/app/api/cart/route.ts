@@ -48,7 +48,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ cart: null, items: [] });
     }
 
-    return NextResponse.json({ cart });
+    return NextResponse.json({ 
+      cart,
+      anonymousId: cart.anonymousId 
+    });
   } catch (error) {
     console.error('Error fetching cart:', error);
     return NextResponse.json(
@@ -92,8 +95,10 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('[POST /api/cart] Getting or creating cart with anonymousId:', anonymousId);
-    const { cart, anonymousId: returnedAnonymousId } = await getOrCreateCart(anonymousId);
-    console.log('[POST /api/cart] Cart obtained:', { cartId: cart.id, returnedAnonymousId });
+    const cartResult = await getOrCreateCart(anonymousId);
+    console.log('[POST /api/cart] Cart result:', cartResult);
+    const cart = cartResult.cart;
+    const returnedAnonymousId = cartResult.anonymousId || cartResult.cart.anonymousId;
 
     const existingItem = await prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
