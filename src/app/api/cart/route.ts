@@ -62,6 +62,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { productId, quantity, anonymousId } = await req.json();
+    
+    console.log('[POST /api/cart] Request:', { productId, quantity, anonymousId });
 
     if (!productId || quantity < 1) {
       return NextResponse.json(
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!product) {
+      console.error('[POST /api/cart] Product not found:', productId);
       return NextResponse.json(
         { error: 'Produto não encontrado' },
         { status: 404 }
@@ -88,7 +91,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    console.log('[POST /api/cart] Getting or creating cart with anonymousId:', anonymousId);
     const { cart, anonymousId: returnedAnonymousId } = await getOrCreateCart(anonymousId);
+    console.log('[POST /api/cart] Cart obtained:', { cartId: cart.id, returnedAnonymousId });
 
     const existingItem = await prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
@@ -114,8 +119,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    console.log('[POST /api/cart] Cart item created/updated:', cartItem.id);
+
     // Recalcular totais
     const updatedCart = await recalculateCartTotals(cart.id);
+    
+    console.log('[POST /api/cart] Success - returning cart');
 
     return NextResponse.json({ 
       cart: updatedCart, 
@@ -123,9 +132,9 @@ export async function POST(req: NextRequest) {
       anonymousId: returnedAnonymousId // Para o frontend salvar no localStorage
     });
   } catch (error) {
-    console.error('Error adding to cart:', error);
+    console.error('[POST /api/cart] Error adding to cart:', error);
     return NextResponse.json(
-      { error: 'Erro ao adicionar ao carrinho' },
+      { error: 'Erro ao adicionar ao carrinho', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

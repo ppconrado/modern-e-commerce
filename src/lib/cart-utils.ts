@@ -4,18 +4,25 @@ import { prisma } from '@/lib/prisma';
 export async function getOrCreateCart(anonymousCartId?: string) {
   const session = await auth();
   
+  console.log('[getOrCreateCart] Start:', { hasSession: !!session?.user?.id, anonymousCartId });
+  
   if (session?.user?.id) {
     // Usuário autenticado
+    console.log('[getOrCreateCart] Looking for user cart:', session.user.id);
     let cart = await prisma.cart.findUnique({
       where: { userId: session.user.id },
       include: { items: { include: { product: true } } },
     });
 
     if (!cart) {
+      console.log('[getOrCreateCart] Creating new user cart');
       cart = await prisma.cart.create({
         data: { userId: session.user.id },
         include: { items: { include: { product: true } } },
       });
+      console.log('[getOrCreateCart] User cart created:', cart.id);
+    } else {
+      console.log('[getOrCreateCart] User cart found:', cart.id);
     }
 
     return { cart, isAnonymous: false, userId: session.user.id };
@@ -23,18 +30,24 @@ export async function getOrCreateCart(anonymousCartId?: string) {
     // Usuário anônimo - usar ID fornecido ou gerar novo
     const anonymousId = anonymousCartId || generateAnonymousId();
     
+    console.log('[getOrCreateCart] Looking for anonymous cart:', anonymousId);
     let cart = await prisma.cart.findUnique({
       where: { anonymousId },
       include: { items: { include: { product: true } } },
     });
 
     if (!cart) {
+      console.log('[getOrCreateCart] Creating new anonymous cart');
       cart = await prisma.cart.create({
         data: { anonymousId },
         include: { items: { include: { product: true } } },
       });
+      console.log('[getOrCreateCart] Anonymous cart created:', cart.id);
+    } else {
+      console.log('[getOrCreateCart] Anonymous cart found:', cart.id);
     }
 
+    console.log('[getOrCreateCart] Returning cart:', { cartId: cart.id, anonymousId });
     return { cart, isAnonymous: true, anonymousId };
   }
 }
