@@ -13,6 +13,7 @@ import {
   Settings,
   BarChart3,
   Loader2,
+  Ticket,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -108,6 +109,22 @@ export default function AdminPage() {
             <CardContent>
               <p className="text-gray-600">
                 View sales and performance metrics
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/admin/coupons">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Ticket className="h-6 w-6 text-pink-600" />
+                Coupons
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600">
+                Create and manage promotional coupons
               </p>
             </CardContent>
           </Card>
