@@ -53,15 +53,32 @@ export function generateAnonymousId(): string {
   return `anon_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
 }
 
-export async function recalculateCartTotals(cartId: string) {
-  const cart = await prisma.cart.findUnique({
-    where: { id: cartId },
-    include: { items: { include: { product: true } } },
-  });
+export async function recalculateCartTotals(
+  cartId: string,
+  // 🔴 NOVO: Aceitar items já carregados para evitar query extra
+  preloadedItems?: any[]
+) {
+  let cart;
+  let items;
+
+  // Se items já foram carregados, não fazer query novamente
+  if (preloadedItems) {
+    items = preloadedItems;
+    cart = await prisma.cart.findUnique({
+      where: { id: cartId },
+    });
+  } else {
+    // Caso contrário, fazer query completa
+    cart = await prisma.cart.findUnique({
+      where: { id: cartId },
+      include: { items: { include: { product: true } } },
+    });
+    items = cart?.items || [];
+  }
 
   if (!cart) return null;
 
-  const subtotal = cart.items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
@@ -70,7 +87,7 @@ export async function recalculateCartTotals(cartId: string) {
   let couponCode = cart.couponCode;
 
   // Se carrinho está vazio, remover cupom
-  if (cart.items.length === 0) {
+  if (items.length === 0) {
     couponCode = null;
     discountAmount = 0;
   } else if (cart.couponCode) {
@@ -147,6 +164,20 @@ export async function validateCouponForCart(
     return { valid: false, error: 'Carrinho não encontrado' };
   }
 
+  // 🔴 NOVO: Validar se carrinho tem itens (não permite cupom em carrinho vazio)
+  if (cart.items.length === 0) {
+    return { valid: false, error: 'Carrinho vazio - não é possível aplicar cupom' };
+  }
+
+  // 🔴 NOVO: Validar se cupom já foi aplicado a este carrinho
+  const existingUsage = await prisma.couponUsage.findUnique({
+    where: { couponId_cartId: { couponId: coupon.id, cartId } },
+  });
+
+  if (existingUsage) {
+    return { valid: false, error: 'Este cupom já foi aplicado a este carrinho' };
+  }
+
   const subtotal = cart.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -155,7 +186,7 @@ export async function validateCouponForCart(
   if (subtotal < coupon.minimumAmount) {
     return {
       valid: false,
-      error: `Compra mínima de ${coupon.minimumAmount} necessária`,
+      error: `Compra mínima de $${coupon.minimumAmount} necessária (sua compra: $${subtotal})`,
     };
   }
 
