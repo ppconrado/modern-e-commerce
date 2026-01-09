@@ -14,7 +14,37 @@ export async function getOrCreateCart(anonymousCartId?: string, includeItems = f
     : undefined;
 
   if (session?.user?.id) {
-    // Usuário autenticado
+    // Usuário autenticado - VALIDATION: Verify user exists in database
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true }, // Just check existence
+    });
+
+    if (!user) {
+      // User in session doesn't exist in database - fallback to anonymous
+      console.warn(
+        '[getOrCreateCart] User session exists but user not in database. Falling back to anonymous. UserId:',
+        session.user.id
+      );
+      
+      // Use anonymous cart instead
+      const anonymousId = anonymousCartId || generateAnonymousId();
+      let cart = await prisma.cart.findUnique({
+        where: { anonymousId },
+        include: cartInclude,
+      });
+
+      if (!cart) {
+        cart = await prisma.cart.create({
+          data: { anonymousId },
+          include: cartInclude,
+        });
+      }
+
+      return { cart, isAnonymous: true, anonymousId };
+    }
+
+    // User exists - proceed with authenticated cart
     let cart = await prisma.cart.findUnique({
       where: { userId: session.user.id },
       include: cartInclude,
@@ -125,14 +155,26 @@ export async function recalculateCartTotals(
   });
 }
 
-export function isCouponValid(coupon: any): boolean {
+export function isCouponValid(coupon: any): { valid: boolean; errorMessage?: string } {
   const now = new Date();
   
-  if (!coupon.isActive) return false;
-  if (now < coupon.startDate || now > coupon.endDate) return false;
-  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return false;
+  if (!coupon.isActive) {
+    return { valid: false, errorMessage: 'Cupom não está ativo' };
+  }
   
-  return true;
+  if (now < coupon.startDate) {
+    return { valid: false, errorMessage: 'Cupom ainda não é válido' };
+  }
+  
+  if (now > coupon.endDate) {
+    return { valid: false, errorMessage: 'Cupom expirado' };
+  }
+  
+  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+    return { valid: false, errorMessage: 'Cupom atingiu o limite de uso' };
+  }
+  
+  return { valid: true };
 }
 
 export async function validateCouponForCart(
@@ -147,12 +189,16 @@ export async function validateCouponForCart(
     where: { code: { equals: normalized, mode: 'insensitive' } },
   });
 
+  console.log('🔍 Coupon found:', coupon?.code, 'for input:', normalized);
+
   if (!coupon) {
     return { valid: false, error: 'Cupom não encontrado' };
   }
 
-  if (!isCouponValid(coupon)) {
-    return { valid: false, error: 'Cupom expirado ou inválido' };
+  const validationCheck = isCouponValid(coupon);
+  if (!validationCheck.valid) {
+    console.log('⏰ Coupon validation failed:', validationCheck.errorMessage);
+    return { valid: false, error: validationCheck.errorMessage || 'Cupom inválido' };
   }
 
   const cart = await prisma.cart.findUnique({
@@ -183,26 +229,37 @@ export async function validateCouponForCart(
     0
   );
 
+  console.log('💰 Cart subtotal:', subtotal, 'Coupon minimum:', coupon.minimumAmount);
+
   if (subtotal < coupon.minimumAmount) {
+    const errorMsg = `Compra mínima de $${coupon.minimumAmount} necessária (sua compra: $${subtotal.toFixed(2)})`;
+    console.log('❌', errorMsg);
     return {
       valid: false,
-      error: `Compra mínima de $${coupon.minimumAmount} necessária (sua compra: $${subtotal})`,
+      error: errorMsg,
     };
   }
 
   if (coupon.applicableCategories) {
-    const categories = JSON.parse(coupon.applicableCategories);
-    const hasValidCategory = cart.items.some((item) =>
-      categories.includes(item.product.category)
-    );
+    try {
+      const categories = JSON.parse(coupon.applicableCategories);
+      const hasValidCategory = cart.items.some((item) =>
+        categories.includes(item.product.category)
+      );
 
-    if (!hasValidCategory) {
-      return {
-        valid: false,
-        error: 'Este cupom não se aplica aos produtos do seu carrinho',
-      };
+      if (!hasValidCategory) {
+        return {
+          valid: false,
+          error: 'Este cupom não se aplica aos produtos do seu carrinho',
+        };
+      }
+    } catch (e) {
+      console.error('❌ Error parsing coupon categories:', e);
+      // Se houver erro no parse, considerar como cupom válido para não bloquear
+      // (é um erro de dados, não validação)
     }
   }
 
+  console.log('✅ Coupon validated successfully:', coupon.code);
   return { valid: true, coupon };
 }

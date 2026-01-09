@@ -5,6 +5,8 @@ import {
   getOrCreateCart,
   recalculateCartTotals,
 } from '@/lib/cart-utils';
+import { logger } from '@/lib/logger';
+import { validateRequest, AddToCartSchema, UpdateCartItemSchema, RemoveCartItemSchema } from '@/lib/validation';
 
 // GET /api/cart - Obter carrinho do usuário
 export async function GET(req: NextRequest) {
@@ -65,14 +67,18 @@ export async function GET(req: NextRequest) {
 // OTIMIZADO: Reduzido de 7 para 2-3 queries usando upsert
 export async function POST(req: NextRequest) {
   try {
-    const { productId, quantity, anonymousId } = await req.json();
+    const body = await req.json();
+    const validation = validateRequest(AddToCartSchema, body);
 
-    if (!productId || quantity < 1) {
+    if (!validation.valid) {
+      logger.warn('Invalid add-to-cart request', { error: validation.error });
       return NextResponse.json(
-        { error: 'productId e quantity são obrigatórios' },
+        { error: 'Invalid request: ' + validation.error },
         { status: 400 }
       );
     }
+
+    const { productId, quantity, anonymousId } = validation.data;
 
     // Query 1: Verificar produto e obter/criar carrinho em paralelo
     const [product, cartResult] = await Promise.all([
@@ -116,6 +122,8 @@ export async function POST(req: NextRequest) {
     // Query 3: Recalcular totais
     const updatedCart = await recalculateCartTotals(cart.id);
 
+    logger.info('Item added to cart', { cartId: cart.id, productId, quantity });
+
     return NextResponse.json({ 
       cart: updatedCart, 
       cartItem,
@@ -125,6 +133,151 @@ export async function POST(req: NextRequest) {
     console.error('Error adding to cart:', error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: 'Erro ao adicionar ao carrinho' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH /api/cart - Atualizar quantidade de um item
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const validation = validateRequest(UpdateCartItemSchema, body);
+
+    if (!validation.valid) {
+      logger.warn('Invalid update-item request', { error: validation.error });
+      return NextResponse.json(
+        { error: 'Invalid request: ' + validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { productId, quantity, anonymousId } = validation.data;
+
+    // Use getOrCreateCart() - matches POST logic for consistent authorization
+    const { cart } = await getOrCreateCart(anonymousId, false);
+
+    if (!cart?.id) {
+      logger.warn('Cart not found', { cartId: cart?.id, anonymousId });
+      return NextResponse.json(
+        { error: 'Carrinho não encontrado' },
+        { status: 404 }
+      );
+    }
+    const cartId = cart.id;
+
+    // Verificar se item existe no carrinho
+    const existingItem = await prisma.cartItem.findUnique({
+      where: { cartId_productId: { cartId, productId } },
+    });
+
+    if (!existingItem) {
+      logger.warn('Item not in cart', { cartId, productId });
+      return NextResponse.json(
+        { error: 'Item não encontrado no carrinho' },
+        { status: 404 }
+      );
+    }
+
+    if (quantity === 0) {
+      // Remover item
+      await prisma.cartItem.delete({
+        where: { cartId_productId: { cartId, productId } },
+      });
+    } else {
+      // Atualizar quantidade (respeitar estoque atual)
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { stock: true },
+      });
+
+      if (!product) {
+        return NextResponse.json(
+          { error: 'Produto não encontrado' },
+          { status: 404 }
+        );
+      }
+
+      if (product.stock < quantity) {
+        return NextResponse.json(
+          { error: 'Estoque insuficiente' },
+          { status: 400 }
+        );
+      }
+
+      await prisma.cartItem.update({
+        where: { cartId_productId: { cartId, productId } },
+        data: { quantity },
+      });
+    }
+
+    const updatedCart = await recalculateCartTotals(cartId);
+
+    logger.info('Cart item updated', { cartId, productId, newQuantity: quantity });
+
+    return NextResponse.json({ cart: updatedCart });
+  } catch (error) {
+    logger.error('Error updating cart item', error instanceof Error ? error : new Error(String(error)));
+    return NextResponse.json(
+      { error: 'Erro ao atualizar item do carrinho' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/cart - Remover item do carrinho
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const validation = validateRequest(RemoveCartItemSchema, body);
+
+    if (!validation.valid) {
+      logger.warn('Invalid remove-item request', { error: validation.error });
+      return NextResponse.json(
+        { error: 'Invalid request: ' + validation.error },
+        { status: 400 }
+      );
+    }
+
+    const { productId, anonymousId } = validation.data;
+
+    // Use getOrCreateCart() - matches POST logic for consistent authorization
+    const { cart } = await getOrCreateCart(anonymousId, false);
+
+    if (!cart?.id) {
+      logger.warn('Cart not found for deletion', { cartId: cart?.id, anonymousId });
+      return NextResponse.json(
+        { error: 'Carrinho não encontrado' },
+        { status: 404 }
+      );
+    }
+    const cartId = cart.id;
+
+    // Verificar existência antes de remover
+    const existingItem = await prisma.cartItem.findUnique({
+      where: { cartId_productId: { cartId, productId } },
+    });
+
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: 'Item não encontrado no carrinho' },
+        { status: 404 }
+      );
+    }
+
+    await prisma.cartItem.delete({
+      where: { cartId_productId: { cartId, productId } },
+    });
+
+    const updatedCart = await recalculateCartTotals(cartId);
+
+    logger.info('Item removed from cart', { cartId, productId });
+
+    return NextResponse.json({ cart: updatedCart });
+  } catch (error) {
+    logger.error('Error removing cart item', error instanceof Error ? error : new Error(String(error)));
+    return NextResponse.json(
+      { error: 'Erro ao remover item do carrinho' },
       { status: 500 }
     );
   }

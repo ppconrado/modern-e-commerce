@@ -7,33 +7,51 @@ import {
   isCouponValid,
 } from '@/lib/cart-utils';
 import { Prisma } from '@prisma/client';
+import { logger } from '@/lib/logger';
+import { validateRequest, ApplyCouponSchema } from '@/lib/validation';
 
 // POST /api/cart/apply-coupon
 export async function POST(req: NextRequest) {
   try {
-    const { couponCode, cartId } = await req.json();
+    const body = await req.json();
+    console.log('📥 Apply coupon request body:', body);
+    
+    const validationResult = validateRequest(ApplyCouponSchema, body);
+    console.log('🔍 Validation result:', validationResult);
 
-    if (!couponCode || !cartId) {
-      return NextResponse.json(
-        { error: 'couponCode e cartId são obrigatórios' },
-        { status: 400 }
-      );
+    if (!validationResult.valid) {
+      const errorMessage = 'Invalid request: ' + validationResult.error;
+      const response = { error: errorMessage };
+      logger.warn('Invalid coupon apply request', { error: validationResult.error });
+      console.error('🔴 Invalid request:', { error: validationResult.error, body, response });
+      console.log('🔴 Sending 400 response with:', response);
+      return NextResponse.json(response, { status: 400 });
     }
 
+    const { couponCode, cartId } = validationResult.data;
+    console.log('✅ Request validated. Coupon:', couponCode, 'CartId:', cartId);
+
     // Validar cupom
-    const validation = await validateCouponForCart(
+    const couponValidation = await validateCouponForCart(
       couponCode.toUpperCase(),
       cartId
     );
 
-    if (!validation.valid) {
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+    if (!couponValidation.valid) {
+      const errorMessage = couponValidation.error || 'Cupom inválido';
+      const response = { error: errorMessage };
+      logger.warn('Coupon validation failed', { error: errorMessage, cartId });
+      console.error('🔴 Coupon validation failed:', {
+        error: errorMessage,
+        cartId,
+        couponCode,
+        validationResult: couponValidation,
+        response,
+      });
+      return NextResponse.json(response, { status: 400 });
     }
 
-    const coupon = validation.coupon!;
+    const coupon = couponValidation.coupon!;
 
     try {
       // 🔴 CRÍTICO: Usar transação para garantir atomicidade
@@ -80,6 +98,8 @@ export async function POST(req: NextRequest) {
       // Recalcular totais (fora da transação, após confirmar aplicação)
       const finalCart = await recalculateCartTotals(cartId, result?.items || []);
 
+      logger.info('Coupon applied successfully', { cartId, couponCode, discount: finalCart?.discountAmount });
+
       return NextResponse.json({
         success: true,
         cart: finalCart,
@@ -104,7 +124,9 @@ export async function POST(req: NextRequest) {
       throw transactionError; // Re-lançar para ser capturado pelo catch externo
     }
   } catch (error) {
-    console.error('❌ Erro ao aplicar cupom:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('❌ Erro ao aplicar cupom', error instanceof Error ? error : new Error(errorMessage));
+    console.error('🔴 Error applying coupon:', { error: errorMessage, stack: error instanceof Error ? error.stack : undefined });
 
     // Identificar tipo específico de erro para mensagem melhor
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -135,12 +157,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      { 
-        error: 'Erro ao aplicar cupom. Tente novamente mais tarde.',
-        debug: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : String(error) : undefined,
-      },
-      { status: 500 }
-    );
+    const debugMessage = process.env.NODE_ENV === 'development' ? errorMessage : undefined;
+    const response = { 
+      error: 'Erro ao aplicar cupom. Tente novamente mais tarde.',
+      ...(debugMessage && { debug: debugMessage }),
+    };
+    console.error('🔴 Final error response:', { error: errorMessage, response });
+    return NextResponse.json(response, { status: 500 });
   }
 }
