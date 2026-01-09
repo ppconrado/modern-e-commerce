@@ -226,7 +226,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
     },
-    [session?.user?.id]
+    [session?.user?.id, session?.user?.email]
   );
 
   const applyCoupon = useCallback(
