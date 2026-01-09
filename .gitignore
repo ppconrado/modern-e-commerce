@@ -27,5 +27,11 @@ scripts/fix-passwords.ts
 scripts/generate-hash.ts
 scripts/update-passwords.ts
 
+# Temporary debug/test files
+check-db.js
+check-db.ts
+check-local-db.ts
+seed-test-coupons.ts
+
 playwright/.auth/
 .vercel
