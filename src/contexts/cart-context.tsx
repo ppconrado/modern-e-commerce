@@ -82,7 +82,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = useCallback(
     async (product: Product, quantity: number = 1) => {
       try {
-        const { cartId, anonymousId } = useCartStore.getState();
+        const { cartId, anonymousId: storeAnonymousId } = useCartStore.getState();
+        
+        // Para usuários não logados, garantir que temos um anonymousId
+        let anonymousId = storeAnonymousId;
+        if (!session?.user?.id) {
+          if (!anonymousId) {
+            // Tentar pegar do localStorage
+            const savedAnonId = localStorage.getItem('anonCartId');
+            if (savedAnonId) {
+              anonymousId = savedAnonId;
+            } else {
+              // Gerar novo ID
+              anonymousId = `anon_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
+              localStorage.setItem('anonCartId', anonymousId);
+            }
+            // Atualizar store com o anonymousId
+            useCartStore.getState().setCartId(cartId || '', anonymousId);
+          }
+        }
         
         const response = await fetch('/api/cart', {
           method: 'POST',
@@ -115,7 +133,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
     },
-    []
+    [session?.user?.id]
   );
 
   const updateItemQuantity = useCallback(
