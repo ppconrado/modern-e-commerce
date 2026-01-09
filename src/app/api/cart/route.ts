@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 // POST /api/cart - Adicionar item ao carrinho
 export async function POST(req: NextRequest) {
   try {
-    const { productId, quantity } = await req.json();
+    const { productId, quantity, anonymousId } = await req.json();
 
     if (!productId || quantity < 1) {
       return NextResponse.json(
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { cart } = await getOrCreateCart();
+    const { cart, anonymousId: returnedAnonymousId } = await getOrCreateCart(anonymousId);
 
     const existingItem = await prisma.cartItem.findUnique({
       where: { cartId_productId: { cartId: cart.id, productId } },
@@ -117,7 +117,11 @@ export async function POST(req: NextRequest) {
     // Recalcular totais
     const updatedCart = await recalculateCartTotals(cart.id);
 
-    return NextResponse.json({ cart: updatedCart, cartItem });
+    return NextResponse.json({ 
+      cart: updatedCart, 
+      cartItem,
+      anonymousId: returnedAnonymousId // Para o frontend salvar no localStorage
+    });
   } catch (error) {
     console.error('Error adding to cart:', error);
     return NextResponse.json(

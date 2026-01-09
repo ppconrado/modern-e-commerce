@@ -82,10 +82,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = useCallback(
     async (product: Product, quantity: number = 1) => {
       try {
+        const { cartId, anonymousId } = useCartStore.getState();
+        
         const response = await fetch('/api/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: product.id, quantity }),
+          body: JSON.stringify({ 
+            productId: product.id, 
+            quantity,
+            anonymousId: anonymousId || undefined
+          }),
         });
 
         if (!response.ok) {
@@ -93,7 +99,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           throw new Error(error.error || 'Erro ao adicionar ao carrinho');
         }
 
-        const { cart } = await response.json();
+        const { cart, anonymousId: newAnonymousId } = await response.json();
+        
+        // Se recebeu um novo anonymousId, salvar no localStorage
+        if (newAnonymousId && !session?.user?.id) {
+          localStorage.setItem('anonCartId', newAnonymousId);
+          useCartStore.getState().setCartId(cart.id, newAnonymousId);
+        }
+        
         useCartStore.getState().setCart(cart);
 
         return { success: true, cart };

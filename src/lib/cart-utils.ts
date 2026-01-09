@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function getOrCreateCart() {
+export async function getOrCreateCart(anonymousCartId?: string) {
   const session = await auth();
   
   if (session?.user?.id) {
@@ -20,8 +20,8 @@ export async function getOrCreateCart() {
 
     return { cart, isAnonymous: false, userId: session.user.id };
   } else {
-    // Usuário anônimo - usar cookie ou gerar novo
-    const anonymousId = generateAnonymousId();
+    // Usuário anônimo - usar ID fornecido ou gerar novo
+    const anonymousId = anonymousCartId || generateAnonymousId();
     
     let cart = await prisma.cart.findUnique({
       where: { anonymousId },
