@@ -87,6 +87,31 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        // Clear user's cart after successful payment
+        const userCart = await prisma.cart.findUnique({
+          where: { userId: metadata.userId },
+        });
+
+        if (userCart) {
+          // Delete all cart items
+          await prisma.cartItem.deleteMany({
+            where: { cartId: userCart.id },
+          });
+
+          // Reset cart totals and remove coupon
+          await prisma.cart.update({
+            where: { id: userCart.id },
+            data: {
+              subtotal: 0,
+              discountAmount: 0,
+              total: 0,
+              couponCode: null,
+            },
+          });
+
+          console.log(`🛒 Cart cleared for user: ${metadata.userId}`);
+        }
+
         console.log(`✅ Order created successfully: ${order.id}`);
         break;
       }

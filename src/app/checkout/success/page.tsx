@@ -49,8 +49,16 @@ function CheckoutSuccessContent() {
         }
       }
 
-      // Clear cart
+      // Clear cart on server
+      await fetch('/api/cart/clear', {
+        method: 'POST',
+      });
+
+      // Clear cart locally
       clearCart();
+      
+      // Clear anonymous cart ID from localStorage
+      localStorage.removeItem('anonCartId');
     } catch (error) {
       console.error('Error creating order:', error);
     } finally {
