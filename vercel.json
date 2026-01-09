@@ -7,7 +7,10 @@
     ],
     "functions": {
         "app/api/**": {
-            "maxDuration": 10
+            "maxDuration": 30
         }
+    },
+    "env": {
+        "PRISMA_GENERATE_SKIP_AUTOINSTALL": "true"
     }
 }

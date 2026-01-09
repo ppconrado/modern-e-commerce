@@ -13,9 +13,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Removed 'standalone' for Vercel deployment - causes issues with serverless functions
+  // output: 'standalone', // Only use for Docker
   serverExternalPackages: ['pg', '@prisma/client'],
+  experimental: {
+    serverComponentsExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
+  },
 };
 
 export default nextConfig;
