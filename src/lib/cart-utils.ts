@@ -58,7 +58,13 @@ export async function recalculateCartTotals(cartId: string) {
   );
 
   let discountAmount = 0;
-  if (cart.couponCode) {
+  let couponCode = cart.couponCode;
+
+  // Se carrinho está vazio, remover cupom
+  if (cart.items.length === 0) {
+    couponCode = null;
+    discountAmount = 0;
+  } else if (cart.couponCode) {
     const coupon = await prisma.coupon.findUnique({
       where: { code: cart.couponCode },
     });
@@ -73,6 +79,9 @@ export async function recalculateCartTotals(cartId: string) {
       if (coupon.maxAmount && discountAmount > coupon.maxAmount) {
         discountAmount = coupon.maxAmount;
       }
+    } else {
+      // Cupom inválido - remover
+      couponCode = null;
     }
   }
 
@@ -84,6 +93,7 @@ export async function recalculateCartTotals(cartId: string) {
       subtotal: parseFloat(subtotal.toFixed(2)),
       discountAmount: parseFloat(discountAmount.toFixed(2)),
       total: parseFloat(total.toFixed(2)),
+      couponCode,
     },
     include: { items: { include: { product: true } } },
   });
@@ -103,8 +113,12 @@ export async function validateCouponForCart(
   couponCode: string,
   cartId: string
 ): Promise<{ valid: boolean; error?: string; coupon?: any }> {
-  const coupon = await prisma.coupon.findUnique({
-    where: { code: couponCode.toUpperCase() },
+  // Normalizar código do cupom para evitar erros por espaços/capitalização
+  const normalized = couponCode.trim().toUpperCase();
+
+  // Buscar de forma case-insensitive (mais robusto) e tolerante a espaços
+  const coupon = await prisma.coupon.findFirst({
+    where: { code: { equals: normalized, mode: 'insensitive' } },
   });
 
   if (!coupon) {

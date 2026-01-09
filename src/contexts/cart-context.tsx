@@ -183,16 +183,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const applyCoupon = useCallback(
     async (couponCode: string) => {
       try {
-        const { cartId, setCart, applyCoupon: applyStoreCoupon } = useCartStore.getState();
+        const { cartId, setCart, applyCoupon: applyStoreCoupon, couponCode: appliedCode, total, discountAmount } = useCartStore.getState();
         if (!cartId) {
           throw new Error('Carrinho não inicializado');
+        }
+
+        // Normalizar código do cupom: remover espaços e padronizar maiúsculas
+        const normalizedCode = couponCode.trim().toUpperCase();
+
+        // Idempotência no cliente: se o mesmo cupom já está aplicado, retornar sucesso imediato
+        if (appliedCode && appliedCode.toUpperCase() === normalizedCode) {
+          return { success: true, cart: { total, discountAmount }, coupon: { code: normalizedCode } };
         }
 
         const response = await fetch('/api/cart/apply-coupon', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            couponCode: couponCode.toUpperCase(),
+            couponCode: normalizedCode,
             cartId,
           }),
         });

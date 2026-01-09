@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { recalculateCartTotals } from '@/lib/cart-utils';
 
 // DELETE /api/cart/remove-coupon
 export async function POST(req: NextRequest) {
@@ -33,30 +34,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Remove coupon
-    const updatedCart = await prisma.cart.update({
+    // Se havia um cupom aplicado, limpar registros de uso para permitir reaplicação
+    if (cart.couponCode) {
+      const coupon = await prisma.coupon.findUnique({
+        where: { code: cart.couponCode },
+      });
+
+      if (coupon) {
+        // Remover registro de uso vinculado ao carrinho
+        await prisma.couponUsage.deleteMany({
+          where: { couponId: coupon.id, cartId },
+        });
+
+        // Decrementar contador de uso (não deixar negativo)
+        if (coupon.usedCount && coupon.usedCount > 0) {
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { usedCount: coupon.usedCount - 1 },
+          });
+        }
+      }
+    }
+
+    // Remover cupom do carrinho
+    await prisma.cart.update({
       where: { id: cartId },
       data: {
         couponCode: null,
         discountAmount: 0,
       },
-      include: { items: { include: { product: true } } },
     });
 
-    // Recalcular total
-    const subtotal = updatedCart.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const finalCart = await prisma.cart.update({
-      where: { id: cartId },
-      data: {
-        subtotal: parseFloat(subtotal.toFixed(2)),
-        total: parseFloat(subtotal.toFixed(2)),
-      },
-      include: { items: { include: { product: true } } },
-    });
+    // Recalcular totais com utilitário centralizado
+    const finalCart = await recalculateCartTotals(cartId);
 
     return NextResponse.json({ cart: finalCart });
   } catch (error) {

@@ -34,16 +34,42 @@ export async function POST(req: NextRequest) {
 
     const coupon = validation.coupon!;
 
+    // Idempotência: se o mesmo cupom já está aplicado, retornar sucesso
+    const currentCart = await prisma.cart.findUnique({ where: { id: cartId } });
+    if (currentCart?.couponCode === coupon.code) {
+      const finalCart = await recalculateCartTotals(cartId);
+      return NextResponse.json({
+        cart: finalCart,
+        coupon: {
+          code: coupon.code,
+          discountValue: coupon.discountValue,
+          discountType: coupon.discountType,
+        },
+      });
+    }
+
     // Verificar se cupom já foi aplicado neste carrinho
     const existingUsage = await prisma.couponUsage.findUnique({
       where: { couponId_cartId: { couponId: coupon.id, cartId } },
     });
 
     if (existingUsage) {
-      return NextResponse.json(
-        { error: 'Este cupom já foi aplicado a este carrinho' },
-        { status: 400 }
-      );
+      // Cupom já aplicado anteriormente: garantir que o carrinho tenha o código e retornar sucesso
+      if (!currentCart?.couponCode) {
+        await prisma.cart.update({
+          where: { id: cartId },
+          data: { couponCode: coupon.code },
+        });
+      }
+      const finalCart = await recalculateCartTotals(cartId);
+      return NextResponse.json({
+        cart: finalCart,
+        coupon: {
+          code: coupon.code,
+          discountValue: coupon.discountValue,
+          discountType: coupon.discountType,
+        },
+      });
     }
 
     // Aplicar cupom ao carrinho
