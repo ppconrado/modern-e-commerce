@@ -95,6 +95,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    if (!paymentIntent.client_secret) {
+      console.error('PaymentIntent created but client_secret is missing:', paymentIntent.id);
+      return NextResponse.json(
+        { error: 'Failed to create payment session' },
+        { status: 500 }
+      );
+    }
+
+    console.log('PaymentIntent created:', paymentIntent.id, 'Amount:', total);
+
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
     });
