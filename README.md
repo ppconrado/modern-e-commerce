@@ -2,7 +2,26 @@
 
 A modern, production-ready e-commerce platform built with cutting-edge technologies from the 2026 Web Development landscape. **Now with PostgreSQL backend!**
 
-## 🚀 Technologies Used
+## � Documentation
+
+- **[🚀 Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete guide for local development and production deployment
+- **[🔐 Vercel Environment Setup](VERCEL_ENV_SETUP.md)** - Step-by-step Vercel configuration
+- **[📖 Project Overview](PROJECT_OVERVIEW.md)** - Project structure and architecture
+- **[🧪 Testing Strategy](TESTING_STRATEGY.md)** - E2E testing with Playwright
+
+## 🌐 Environments
+
+### 🛠️ Development (Local)
+- **Frontend:** http://localhost:3000
+- **Database:** PostgreSQL on Docker (localhost:5433)
+- **Payment:** Stripe Test Mode
+
+### 🚀 Production (Vercel)
+- **Frontend:** https://josepaulo-e-commerce.vercel.app
+- **Database:** Neon PostgreSQL (Cloud)
+- **Payment:** Stripe Live Mode
+
+## �🚀 Technologies Used
 
 This project implements the technologies recommended in the **Web Development in 2026 Study Guide**:
 

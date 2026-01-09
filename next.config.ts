@@ -13,8 +13,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Removed 'standalone' for Vercel deployment - causes issues with serverless functions
-  // output: 'standalone', // Only use for Docker
+  // Use 'standalone' ONLY for Docker builds, NOT for Vercel
+  // Uncomment the line below when building Docker image
+  // output: 'standalone',
+  
   serverExternalPackages: ['pg', '@prisma/client'],
   experimental: {
     serverComponentsExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
