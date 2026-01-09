@@ -57,6 +57,7 @@ model Product {
     Review        Review[]
     ProductImage  ProductImage[]
     WishlistItem  WishlistItem[]
+    cartItems     CartItem[]
 
     @@index([category])
     @@index([averageRating])
@@ -103,6 +104,7 @@ model User {
     Address      Address[]
     Review       Review[]
     WishlistItem WishlistItem[]
+    Cart         Cart?
 }
 
 model Address {
@@ -145,6 +147,77 @@ model WishlistItem {
     @@unique([userId, productId]) // One product per user in wishlist
     @@index([userId])
     @@index([productId])
+}
+
+model Cart {
+    id             String        @id @default(cuid())
+    userId         String?       @unique // NULL for anonymous carts
+    anonymousId    String?       @unique // For anonymous users
+    couponCode     String?
+    discountAmount Float         @default(0)
+    subtotal       Float         @default(0)
+    total          Float         @default(0)
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime      @updatedAt
+    user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    items          CartItem[]
+    CouponUsage    CouponUsage[]
+
+    @@index([userId])
+    @@index([anonymousId])
+}
+
+model CartItem {
+    id        String   @id @default(cuid())
+    cartId    String
+    productId String
+    quantity  Int      @default(1)
+    price     Float // Price snapshot at time of add
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+    product   Product  @relation(fields: [productId], references: [id])
+
+    @@unique([cartId, productId]) // One product variant per cart
+    @@index([cartId])
+    @@index([productId])
+}
+
+model Coupon {
+    id                   String        @id @default(cuid())
+    code                 String        @unique
+    description          String?
+    discountType         String        @default("PERCENTAGE") // PERCENTAGE or FIXED
+    discountValue        Float // e.g., 10 (for 10%) or 50 (for $50)
+    maxUses              Int? // NULL = unlimited
+    usedCount            Int           @default(0)
+    minimumAmount        Float         @default(0) // Minimum cart value
+    maxAmount            Float? // Max cart value (NULL = no limit)
+    applicableCategories String? // JSON array: ["electronics", "books"] or NULL = all
+    startDate            DateTime
+    endDate              DateTime
+    isActive             Boolean       @default(true)
+    createdAt            DateTime      @default(now())
+    updatedAt            DateTime      @updatedAt
+    CouponUsage          CouponUsage[]
+
+    @@index([code])
+    @@index([isActive])
+    @@index([endDate])
+}
+
+model CouponUsage {
+    id       String   @id @default(cuid())
+    couponId String
+    cartId   String
+    userId   String?
+    usedAt   DateTime @default(now())
+    coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+    cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+    @@unique([couponId, cartId]) // One coupon use per cart
+    @@index([couponId])
+    @@index([userId])
 }
 
 enum UserRole {
