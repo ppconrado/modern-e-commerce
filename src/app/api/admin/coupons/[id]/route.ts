@@ -19,7 +19,7 @@ const UpdateCouponSchema = z.object({
 // GET /api/admin/coupons/[id] - Obter cupom específico
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -31,8 +31,10 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const coupon = await prisma.coupon.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!coupon) {
@@ -55,7 +57,7 @@ export async function GET(
 // PATCH /api/admin/coupons/[id] - Atualizar cupom
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -67,6 +69,7 @@ export async function PATCH(
       );
     }
 
+    const { id } = await params;
     const body = await req.json();
     const validation = UpdateCouponSchema.safeParse(body);
 
@@ -78,7 +81,7 @@ export async function PATCH(
     }
 
     const coupon = await prisma.coupon.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!coupon) {
@@ -103,7 +106,7 @@ export async function PATCH(
     if (data.applicableCategories !== undefined) updateData.applicableCategories = data.applicableCategories;
 
     const updated = await prisma.coupon.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -122,7 +125,7 @@ export async function PATCH(
 // DELETE /api/admin/coupons/[id] - Deletar cupom
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -134,8 +137,10 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
+
     const coupon = await prisma.coupon.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!coupon) {
@@ -147,11 +152,11 @@ export async function DELETE(
 
     // Delete associated usage records
     await prisma.couponUsage.deleteMany({
-      where: { couponId: params.id },
+      where: { couponId: id },
     });
 
     await prisma.coupon.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     logger.info('Coupon deleted', { couponCode: coupon.code, userId: session.user.id });
