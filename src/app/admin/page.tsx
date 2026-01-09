@@ -52,7 +52,7 @@ export default function AdminPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/admin/products">
+        <Link href="/admin/products" data-testid="admin-products-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -68,7 +68,7 @@ export default function AdminPage() {
           </Card>
         </Link>
 
-        <Link href="/admin/orders">
+        <Link href="/admin/orders" data-testid="admin-orders-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function AdminPage() {
         </Link>
 
         {session?.user?.role === 'SUPER_ADMIN' && (
-          <Link href="/admin/users">
+        <Link href="/admin/users" data-testid="admin-users-link">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -98,7 +98,7 @@ export default function AdminPage() {
           </Link>
         )}
 
-        <Link href="/admin/analytics">
+        <Link href="/admin/analytics" data-testid="admin-analytics-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function AdminPage() {
           </Card>
         </Link>
 
-        <Link href="/admin/coupons">
+        <Link href="/admin/coupons" data-testid="admin-coupons-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -130,7 +130,7 @@ export default function AdminPage() {
           </Card>
         </Link>
 
-        <Link href="/admin/settings">
+        <Link href="/admin/settings" data-testid="admin-settings-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
