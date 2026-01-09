@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest) {
     const { productId, quantity, anonymousId } = validation.data;
 
     // Use getOrCreateCart() - matches POST logic for consistent authorization
-    const { cart } = await getOrCreateCart(anonymousId, false);
+    const { cart } = await getOrCreateCart(anonymousId || undefined, false);
 
     if (!cart?.id) {
       logger.warn('Cart not found', { cartId: cart?.id, anonymousId });
@@ -242,7 +242,7 @@ export async function DELETE(req: NextRequest) {
     const { productId, anonymousId } = validation.data;
 
     // Use getOrCreateCart() - matches POST logic for consistent authorization
-    const { cart } = await getOrCreateCart(anonymousId, false);
+    const { cart } = await getOrCreateCart(anonymousId || undefined, false);
 
     if (!cart?.id) {
       logger.warn('Cart not found for deletion', { cartId: cart?.id, anonymousId });

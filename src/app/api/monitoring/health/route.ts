@@ -34,7 +34,7 @@ let requestCount = 0;
 let totalResponseTime = 0;
 const startTime = Date.now();
 
-export function recordRequest(responseTime: number) {
+function recordRequest(responseTime: number) {
   requestCount++;
   totalResponseTime += responseTime;
 }

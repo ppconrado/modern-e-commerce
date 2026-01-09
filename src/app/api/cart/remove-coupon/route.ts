@@ -40,6 +40,15 @@ export async function POST(req: NextRequest) {
 
     try {
       const resultCart = await prisma.$transaction(async (tx) => {
+        // Early return if no coupon to remove
+        if (!cart.couponCode) {
+          return await tx.cart.update({
+            where: { id: cartId },
+            data: { couponCode: null },
+            include: { items: { include: { product: true } } },
+          });
+        }
+
         // Obter cupom pelo código
         const coupon = await tx.coupon.findFirst({
           where: { code: { equals: cart.couponCode, mode: 'insensitive' } },

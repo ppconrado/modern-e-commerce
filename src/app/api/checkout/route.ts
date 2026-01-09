@@ -27,7 +27,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Get authenticated user's cart and ensure totals are accurate server-side
-    const { cart } = await getOrCreateCart(undefined, true);
+    const { cart: rawCart } = await getOrCreateCart(undefined, true);
+    
+    // Requery to ensure items are loaded with proper typing
+    const cart = await prisma.cart.findUnique({
+      where: { id: rawCart.id },
+      include: { items: { include: { product: true } } },
+    });
 
     if (!cart || !cart.items || cart.items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
@@ -43,7 +49,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const total = updatedCart.total;
+    const total = updatedCart!.total;
 
     // Create Payment Intent (not creating order yet, wait for webhook confirmation)
     const paymentIntent = await stripe.paymentIntents.create(

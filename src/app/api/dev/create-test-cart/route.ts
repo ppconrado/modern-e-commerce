@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
     const updatedCart = await recalculateCartTotals(cart.id);
 
     return NextResponse.json({
-      cart: updatedCart,
-      cartId: updatedCart.id,
-      anonymousId: updatedCart.anonymousId,
+      cart: updatedCart!,
+      cartId: updatedCart!.id,
+      anonymousId: updatedCart!.anonymousId,
     });
   } catch (error) {
     console.error('Error creating test cart:', error);
