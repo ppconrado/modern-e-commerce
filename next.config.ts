@@ -17,10 +17,8 @@ const nextConfig: NextConfig = {
   // Uncomment the line below when building Docker image
   // output: 'standalone',
   
-  serverExternalPackages: ['pg', '@prisma/client'],
-  experimental: {
-    serverComponentsExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
-  },
+  // External packages for serverless functions (Vercel/Edge runtime)
+  serverExternalPackages: ['pg', '@prisma/client', '@prisma/adapter-pg'],
 };
 
 export default nextConfig;
