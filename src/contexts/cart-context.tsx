@@ -171,10 +171,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeFromCart = useCallback(
     async (productId: string) => {
       try {
-        const { getItemIdByProductId, setCart } = useCartStore.getState();
+        const { items, getItemIdByProductId, setCart } = useCartStore.getState();
         const itemId = getItemIdByProductId(productId);
+        
         if (!itemId) {
-          throw new Error('Item não encontrado no carrinho');
+          // Debug: log items para diagnosticar
+          console.warn('Item not found in store:', { productId, items });
+          throw new Error(`Item ${productId} não encontrado no carrinho`);
         }
 
         const response = await fetch(`/api/cart/${itemId}`, {

@@ -25,6 +25,7 @@ const adapter = new PrismaPg(pool);
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
-if (process.env.NODE_ENV !== 'production') {
+// Sempre salvar em globalForPrisma para reutilizar em produção
+if (!globalForPrisma.prisma) {
   globalForPrisma.prisma = prisma;
 }
