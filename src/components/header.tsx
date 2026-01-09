@@ -2,7 +2,7 @@
 
 import { ShoppingCart, LogOut, User, Heart, Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { useCartStore } from '@/store/cart';
+import { useCart } from '@/contexts/cart-context';
 import { Button } from './ui/button';
 import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
@@ -11,8 +11,18 @@ import { useQuery } from '@tanstack/react-query';
 export function Header() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const totalItems = useCartStore((state) => state.getTotalItems());
+  const { getTotalItems, clearCart } = useCart();
+  const totalItems = getTotalItems();
   const { data: session } = useSession();
+
+  const handleSignOut = async () => {
+    // Limpar carrinho local
+    clearCart();
+    // Limpar localStorage
+    localStorage.removeItem('anonCartId');
+    // Fazer logout
+    await signOut({ callbackUrl: '/' });
+  };
 
   // Fetch wishlist count
   const { data: wishlistData } = useQuery({
@@ -86,7 +96,7 @@ export function Header() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign out
@@ -232,7 +242,7 @@ export function Header() {
                   size="sm"
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    signOut({ callbackUrl: '/' });
+                    handleSignOut();
                   }}
                   className="w-full"
                 >

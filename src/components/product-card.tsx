@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Plus, Minus } from 'lucide-react';
 import type { Product } from '@/types';
-import { useCartStore } from '@/store/cart';
+import { useCart } from '@/contexts/cart-context';
 import { Button } from './ui/button';
 import {
   Card,
@@ -23,26 +23,45 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { items, addItem, updateQuantity } = useCartStore();
+  const { items, addToCart, updateItemQuantity, removeFromCart } =
+    useCart();
   const cartItem = items.find((item) => item.product.id === product.id);
 
-  const handleAddToCart = () => {
-    addItem(product);
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} has been added to your cart.`,
-    });
-  };
-
-  const handleIncrement = () => {
-    if (cartItem) {
-      updateQuantity(product.id, cartItem.quantity + 1);
+  const handleAddToCart = async () => {
+    const result = await addToCart(product);
+    if (result.success) {
+      toast({
+        title: 'Added to cart',
+        description: `${product.name} has been added to your cart.`,
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to add to cart',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handleDecrement = () => {
+  const handleIncrement = async () => {
+    if (cartItem && cartItem.quantity < product.stock) {
+      await updateItemQuantity(product.id, cartItem.quantity + 1);
+    }
+  };
+
+  const handleDecrement = async () => {
     if (cartItem) {
-      updateQuantity(product.id, cartItem.quantity - 1);
+      if (cartItem.quantity === 1) {
+        const result = await removeFromCart(product.id);
+        if (result.success) {
+          toast({
+            title: 'Removed from cart',
+            description: `${product.name} has been removed from your cart.`,
+          });
+        }
+      } else {
+        await updateItemQuantity(product.id, cartItem.quantity - 1);
+      }
     }
   };
 
