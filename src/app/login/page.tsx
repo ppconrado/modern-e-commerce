@@ -29,6 +29,22 @@ export default function LoginPage() {
         setError('Invalid email or password');
         setLoading(false);
       } else if (result?.ok) {
+        // Mesclar carrinho anônimo com o usuário
+        const anonymousCartId = localStorage.getItem('anonCartId');
+        if (anonymousCartId) {
+          try {
+            await fetch('/api/cart/merge', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ anonymousCartId }),
+            });
+            // Limpar ID do carrinho anônimo
+            localStorage.removeItem('anonCartId');
+          } catch (err) {
+            console.error('Error merging carts:', err);
+          }
+        }
+
         // Use window.location for reliable redirect in tests
         window.location.href = result.url || '/';
       }

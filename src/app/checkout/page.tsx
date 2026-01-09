@@ -19,7 +19,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Loader2, MapPin, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useCartStore } from '@/store/cart';
+import { useCart } from '@/contexts/cart-context';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -104,12 +104,15 @@ function CheckoutForm({ clientSecret, onSuccess }: CheckoutFormProps) {
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { items: cartItems, getTotalPrice } = useCartStore();
+  const { items: cartItems, cartId, getTotalPrice, applyCoupon, removeCoupon, couponCode } =
+    useCart();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
+  const [couponInput, setCouponInput] = useState('');
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [formData, setFormData] = useState({
     type: 'SHIPPING' as 'HOME' | 'SHIPPING' | 'BILLING',
     label: '',
@@ -228,6 +231,45 @@ export default function CheckoutPage() {
         title: 'Error',
         description: 'Failed to delete address',
         variant: 'destructive',
+      });
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a coupon code',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setApplyingCoupon(true);
+    const result = await applyCoupon(couponInput);
+    setApplyingCoupon(false);
+
+    if (result.success) {
+      toast({
+        title: 'Success',
+        description: 'Coupon applied successfully',
+      });
+      setCouponInput('');
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to apply coupon',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    const result = await removeCoupon();
+    if (result.success) {
+      toast({
+        title: 'Success',
+        description: 'Coupon removed',
       });
     }
   };
@@ -525,15 +567,48 @@ export default function CheckoutPage() {
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${getTotalPrice().toFixed(2)}</span>
                 </div>
+
+                {/* Coupon Section */}
+                <div className="space-y-2">
+                  {couponCode ? (
+                    <div className="flex justify-between text-sm items-center">
+                      <span className="text-green-600 font-medium">{couponCode}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveCoupon}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Coupon code"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        disabled={applyingCoupon}
+                      />
+                      <Button
+                        onClick={handleApplyCoupon}
+                        disabled={applyingCoupon || !couponInput.trim()}
+                        variant="outline"
+                      >
+                        {applyingCoupon ? 'Applying...' : 'Apply'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   <span>Calculated at next step</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${getTotalPrice().toFixed(2)}</span>
                 </div>
               </div>
 

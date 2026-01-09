@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Trash2, ShoppingBag } from 'lucide-react';
-import { useCartStore } from '@/store/cart';
+import { useCart } from '@/contexts/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,17 +20,26 @@ import { toast } from '@/hooks/use-toast';
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
+  const { items, removeFromCart, updateItemQuantity, getTotalPrice } =
+    useCart();
   const [orderComplete, setOrderComplete] = useState(false);
 
   const totalPrice = getTotalPrice();
 
-  const handleRemoveItem = (productId: string, productName: string) => {
-    removeItem(productId);
-    toast({
-      title: 'Removed from cart',
-      description: `${productName} has been removed from your cart.`,
-    });
+  const handleRemoveItem = async (productId: string, productName: string) => {
+    const result = await removeFromCart(productId);
+    if (result.success) {
+      toast({
+        title: 'Removed from cart',
+        description: `${productName} has been removed from your cart.`,
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to remove item',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (orderComplete) {
@@ -96,7 +105,9 @@ export default function CartPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(product.id, quantity - 1)}
+                        onClick={() =>
+                          updateItemQuantity(product.id, quantity - 1)
+                        }
                       >
                         -
                       </Button>
@@ -104,7 +115,9 @@ export default function CartPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(product.id, quantity + 1)}
+                        onClick={() =>
+                          updateItemQuantity(product.id, quantity + 1)
+                        }
                         disabled={quantity >= product.stock}
                       >
                         +
