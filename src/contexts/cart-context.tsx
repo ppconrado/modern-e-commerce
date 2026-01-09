@@ -7,7 +7,7 @@ import type { Product } from '@/types';
 
 interface CartContextValue {
   items: any[];
-  cartId: string;
+  cartId: string | null;
   discountAmount: number;
   subtotal: number;
   total: number;

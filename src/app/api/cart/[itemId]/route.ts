@@ -6,11 +6,11 @@ import { recalculateCartTotals } from '@/lib/cart-utils';
 // PUT /api/cart/[itemId] - Atualizar quantidade
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
     const { quantity } = await req.json();
-    const itemId = params.itemId;
+    const { itemId } = await params;
 
     if (quantity < 0) {
       return NextResponse.json(
@@ -78,10 +78,10 @@ export async function PUT(
 // DELETE /api/cart/[itemId]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { itemId: string } }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   try {
-    const itemId = params.itemId;
+    const { itemId } = await params;
 
     const cartItem = await prisma.cartItem.findUnique({
       where: { id: itemId },
