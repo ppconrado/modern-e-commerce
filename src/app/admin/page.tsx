@@ -82,22 +82,6 @@ export default function AdminPage() {
           </Card>
         </Link>
 
-        {session?.user?.role === 'SUPER_ADMIN' && (
-          <Link href="/admin/users" data-testid="admin-users-link">
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Users className="h-6 w-6 text-purple-600" />
-                  Users
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Manage user accounts and roles</p>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-
         <Link href="/admin/analytics" data-testid="admin-analytics-link">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
@@ -145,6 +129,22 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </Link>
+
+        {session?.user?.role === 'SUPER_ADMIN' && (
+          <Link href="/admin/users" data-testid="admin-users-link">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Users className="h-6 w-6 text-purple-600" />
+                  Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Manage user accounts and roles</p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
       </div>
 
       <div className="mt-8">
