@@ -83,7 +83,7 @@ export default function AdminPage() {
         </Link>
 
         {session?.user?.role === 'SUPER_ADMIN' && (
-        <Link href="/admin/users" data-testid="admin-users-link">
+          <Link href="/admin/users" data-testid="admin-users-link">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
