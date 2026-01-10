@@ -39,7 +39,9 @@ export default function AdminCouponsPage() {
 
   // Check authorization
   useEffect(() => {
-    if (status === 'unauthenticated' || (session && session.user?.role !== 'ADMIN')) {
+    const role = session?.user?.role;
+    const isAllowed = role === 'ADMIN' || role === 'SUPER_ADMIN';
+    if (status === 'unauthenticated' || (session && !isAllowed)) {
       redirect('/');
     }
   }, [session, status]);

@@ -52,99 +52,69 @@ export default function AdminPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/admin/products" data-testid="admin-products-link">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Package className="h-6 w-6 text-blue-600" />
-                Product Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">
-                Add, edit, and manage your product catalog
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/orders" data-testid="admin-orders-link">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <ShoppingCart className="h-6 w-6 text-green-600" />
-                Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">View and manage customer orders</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/analytics" data-testid="admin-analytics-link">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <BarChart3 className="h-6 w-6 text-orange-600" />
-                Analytics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">
-                View sales and performance metrics
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/coupons" data-testid="admin-coupons-link">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Ticket className="h-6 w-6 text-pink-600" />
-                Coupons
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">
-                Create and manage promotional coupons
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/settings" data-testid="admin-settings-link">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Settings className="h-6 w-6 text-gray-600" />
-                Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">
-                Configure store settings and preferences
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {session?.user?.role === 'SUPER_ADMIN' && (
-          <Link href="/admin/users" data-testid="admin-users-link">
+        {[
+          {
+            href: '/admin/products',
+            label: 'Product Management',
+            icon: <Package className="h-6 w-6 text-blue-600" />,
+            description: 'Add, edit, and manage your product catalog',
+            testId: 'admin-products-link',
+          },
+          {
+            href: '/admin/orders',
+            label: 'Orders',
+            icon: <ShoppingCart className="h-6 w-6 text-green-600" />,
+            description: 'View and manage customer orders',
+            testId: 'admin-orders-link',
+          },
+          {
+            href: '/admin/analytics',
+            label: 'Analytics',
+            icon: <BarChart3 className="h-6 w-6 text-orange-600" />,
+            description: 'View sales and performance metrics',
+            testId: 'admin-analytics-link',
+          },
+          {
+            href: '/admin/coupons',
+            label: 'Coupons',
+            icon: <Ticket className="h-6 w-6 text-pink-600" />,
+            description: 'Create and manage promotional coupons',
+            testId: 'admin-coupons-link',
+          },
+          {
+            href: '/admin/settings',
+            label: 'Settings',
+            icon: <Settings className="h-6 w-6 text-gray-600" />,
+            description: 'Configure store settings and preferences',
+            testId: 'admin-settings-link',
+          },
+          // Users always last; only for SUPER_ADMIN
+          ...(session?.user?.role === 'SUPER_ADMIN'
+            ? [
+                {
+                  href: '/admin/users',
+                  label: 'Users',
+                  icon: <Users className="h-6 w-6 text-purple-600" />,
+                  description: 'Manage user accounts and roles',
+                  testId: 'admin-users-link',
+                },
+              ]
+            : []),
+        ].map((item) => (
+          <Link key={item.href} href={item.href} data-testid={item.testId} aria-label={item.label} title={`${item.label} (${item.href})`}>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
-                  <Users className="h-6 w-6 text-purple-600" />
-                  Users
+                  {item.icon}
+                  {item.label}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Manage user accounts and roles</p>
+                <p className="text-gray-600">{item.description}</p>
               </CardContent>
             </Card>
           </Link>
-        )}
+        ))}
       </div>
 
       <div className="mt-8">
