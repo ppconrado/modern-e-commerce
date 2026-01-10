@@ -101,7 +101,10 @@ export default function AdminCouponsPage() {
         resetForm();
       } else {
         const error = await res.json();
-        alert(`Error: ${error.error}`);
+        const errorMessage = error.details 
+          ? `${error.error}:\n${error.details.map((d: any) => `- ${d.path.join('.')}: ${d.message}`).join('\n')}`
+          : error.error;
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Error saving coupon:', error);
@@ -223,13 +226,15 @@ export default function AdminCouponsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Descrição</label>
+                  <label className="block text-sm font-medium mb-1">Descrição (mínimo 10 caracteres)</label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full border rounded-lg px-3 py-2"
                     placeholder="10% desconto em compras"
+                    minLength={10}
+                    maxLength={255}
                     required
                   />
                 </div>
