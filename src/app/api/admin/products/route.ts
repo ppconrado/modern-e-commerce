@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limiter';
+import { requireAdminRole } from '@/lib/auth-helpers';
 import { z } from 'zod';
 
 const productSchema = z.object({
@@ -17,12 +19,8 @@ export async function GET(req: NextRequest) {
   try {
     const session = await auth();
 
-    if (
-      !session ||
-      (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = requireAdminRole(session);
+    if (authError) return authError;
 
     const { searchParams } = new URL(req.url);
     const category = searchParams.get('category');
@@ -70,14 +68,14 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/products - Create new product (admin only)
 export async function POST(req: NextRequest) {
   try {
+    // Apply rate limiting
+    const rateLimitError = rateLimit(req, { limiter: 'strict' });
+    if (rateLimitError) return rateLimitError;
+
     const session = await auth();
 
-    if (
-      !session ||
-      (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN')
-    ) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authError = requireAdminRole(session);
+    if (authError) return authError;
 
     const body = await req.json();
     console.log('Received body:', JSON.stringify(body, null, 2));

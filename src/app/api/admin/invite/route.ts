@@ -1,13 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@/auth';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
-
-const connectionString = process.env.DATABASE_URL!;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from '@/lib/prisma';
+import { rateLimit } from '@/lib/rate-limiter';
+import { requireSuperAdminRole } from '@/lib/auth-helpers';
 
 const generateId = () => {
   const timestamp = Date.now().toString(36);
@@ -23,27 +18,36 @@ const generateToken = () => {
 };
 
 // Create admin invite (SUPER_ADMIN only)
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting (10 requests per minute for strict limiter)
+    const rateLimitError = rateLimit(request, { limiter: 'strict' });
+    if (rateLimitError) return rateLimitError;
+
     const session = await auth();
 
     // Check if user is authenticated and is SUPER_ADMIN
-    if (!session || session.user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized. Only super admins can invite admins.' },
-        { status: 403 }
-      );
-    }
+    const authError = requireSuperAdminRole(session);
+    if (authError) return authError;
 
     const { email, role } = await request.json();
 
     // Validate input
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
+    if (!email.includes('@')) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
     // Validate role (can only invite ADMIN or SUPER_ADMIN)
-    if (role && !['ADMIN', 'SUPER_ADMIN'].includes(role)) {
+    const validRoles = ['ADMIN', 'SUPER_ADMIN'];
+    const inviteRole = role || 'ADMIN';
+    if (!validRoles.includes(inviteRole)) {
       return NextResponse.json(
         { error: 'Invalid role. Can only invite ADMIN or SUPER_ADMIN' },
         { status: 400 }
@@ -94,8 +98,8 @@ export async function POST(request: Request) {
         id: generateId(),
         email,
         token: generateToken(),
-        role: role || 'ADMIN',
-        invitedBy: session.user.id,
+        role: inviteRole,
+        invitedBy: session!.user.id, // session is guaranteed non-null after requireSuperAdminRole check
         expiresAt,
       },
     });
@@ -121,13 +125,12 @@ export async function POST(request: Request) {
 }
 
 // Get all invites (SUPER_ADMIN only)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session || session.user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const authError = requireSuperAdminRole(session);
+    if (authError) return authError;
 
     const invites = await prisma.adminInvite.findMany({
       orderBy: { createdAt: 'desc' },

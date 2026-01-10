@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// For now, we'll use a simple in-memory store
-// In production, you'd want to use a database table for settings
 const settingsSchema = z.object({
   storeName: z.string().min(1, 'Store name is required'),
   storeEmail: z.string().email('Invalid email address'),
-  storePhone: z.string().optional(),
-  storeAddress: z.string().optional(),
+  storePhone: z.string().optional().default(''),
+  storeAddress: z.string().optional().default(''),
   currency: z.string().default('USD'),
   taxRate: z.number().min(0).max(100).default(0),
   shippingFee: z.number().min(0).default(0),
@@ -19,7 +18,6 @@ const settingsSchema = z.object({
   maintenanceMode: z.boolean().default(false),
 });
 
-// Default settings
 const defaultSettings = {
   storeName: 'E-Commerce Store',
   storeEmail: 'contact@store.com',
@@ -47,9 +45,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // In production, fetch from database
-    // For now, return default settings
-    return NextResponse.json({ settings: defaultSettings });
+    // Fetch from database or create default if not exists
+    let settings = await prisma.storeSettings.findFirst();
+
+    if (!settings) {
+      settings = await prisma.storeSettings.create({
+        data: defaultSettings,
+      });
+    }
+
+    return NextResponse.json({ settings });
   } catch (error) {
     console.error('Failed to fetch settings:', error);
     return NextResponse.json(
@@ -74,11 +79,23 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const validatedData = settingsSchema.parse(body);
 
-    // In production, save to database
-    // For now, just return the validated data
+    // Find existing settings or create default
+    let settings = await prisma.storeSettings.findFirst();
+
+    if (!settings) {
+      settings = await prisma.storeSettings.create({
+        data: validatedData,
+      });
+    } else {
+      settings = await prisma.storeSettings.update({
+        where: { id: settings.id },
+        data: validatedData,
+      });
+    }
+
     return NextResponse.json({
       message: 'Settings updated successfully',
-      settings: validatedData,
+      settings,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
