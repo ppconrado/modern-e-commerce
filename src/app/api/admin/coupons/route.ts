@@ -12,8 +12,8 @@ const CouponSchema = z.object({
   discountValue: z.number().positive(),
   maxUses: z.number().int().positive().nullable().optional(),
   minimumAmount: z.number().nonnegative().default(0),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  startDate: z.string(),
+  endDate: z.string(),
   isActive: z.boolean().default(true),
   applicableCategories: z.string().optional(), // JSON string
 });
