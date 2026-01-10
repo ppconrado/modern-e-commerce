@@ -62,10 +62,15 @@ export default function AdminCouponsPage() {
       }
     };
 
-    if (session?.user?.role === 'ADMIN') {
+    const role = session?.user?.role;
+    const isAllowed = role === 'ADMIN' || role === 'SUPER_ADMIN';
+    if (isAllowed) {
       fetchCoupons();
+    } else if (status !== 'loading') {
+      // Stop loading if user isn't allowed (redirect effect will handle nav)
+      setLoading(false);
     }
-  }, [session]);
+  }, [session, status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
