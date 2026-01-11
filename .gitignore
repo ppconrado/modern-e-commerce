@@ -21,17 +21,30 @@ tsconfig.tsbuildinfo
 # Local uploads (using Cloudinary instead)
 public/uploads/
 
-# Debug scripts
-scripts/check-users.ts
-scripts/fix-passwords.ts
-scripts/generate-hash.ts
-scripts/update-passwords.ts
 
-# Temporary debug/test files
-check-db.js
-check-db.ts
-check-local-db.ts
-seed-test-coupons.ts
+# Debug/utility scripts (não versionar scripts temporários ou de manutenção)
+scripts/db/check-users.ts
+scripts/db/fix-passwords.ts
+scripts/db/generate-hash.ts
+scripts/db/update-passwords.ts
+scripts/db/check-db.js
+scripts/db/check-db.ts
+scripts/db/check-local-db.ts
+scripts/db/seed-test-coupons.ts
+scripts/db/test-db.js
+scripts/db/deploy-neon-migrations.ts
+scripts/db/resolve-neon-migration.ts
+scripts/db/check-neon-state.js
+scripts/db/check-production-schema.ts
+scripts/db/update-john-super-admin.sql
+scripts/db/update-users.sql
+scripts/application/test-coupon-atomic.ts
+scripts/application/test-coupon-flow.ts
+scripts/legacy/*
+
+# DevOps scripts (não versionar scripts de automação local)
+scripts/devops/deploy-helper.ps1
+scripts/devops/deploy-helper.sh
 
 playwright/.auth/
 .vercel
