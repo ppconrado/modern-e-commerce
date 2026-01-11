@@ -41,8 +41,7 @@ scripts/db/update-users.sql
 scripts/application/test-coupon-atomic.ts
 scripts/application/test-coupon-flow.ts
 scripts/legacy/*
-scripts\db\seed-store-settings.ts
-# DevOps scripts (não versionar scripts de automação local)
+scripts/db/seed-store-settings.ts
 scripts/devops/deploy-helper.ps1
 scripts/devops/deploy-helper.sh
 
