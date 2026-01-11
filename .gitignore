@@ -35,3 +35,4 @@ seed-test-coupons.ts
 
 playwright/.auth/
 .vercel
+cookies.txt
