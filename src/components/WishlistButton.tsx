@@ -15,12 +15,15 @@ interface WishlistButtonProps {
 }
 
 export default function WishlistButton({ productId, size = 'md', showText = false }: WishlistButtonProps) {
-  // Consulta pública para saber se wishlist está desabilitada
+
+  // TODOS OS HOOKS NO TOPO, ANTES DE QUALQUER RETURN
   const { data: publicSettings, isLoading: loadingSettings } = useQueryRQ({
     queryKey: ['public-settings'],
     queryFn: async () => {
       const res = await fetch('/api/public-settings');
-      if (!res.ok) return { enableWishlist: true };
+      if (!res.ok) {
+        return { enableWishlist: true };
+      }
       const data = await res.json();
       return {
         ...data,
@@ -29,18 +32,12 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
     },
     staleTime: 60000,
   });
-
-  if (loadingSettings) return null;
-  if (!publicSettings?.enableWishlist) return null;
   const { data: session, status } = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [wishlistDisabled, setWishlistDisabled] = useState(false);
-
-
-  // Check if product is in wishlist
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -54,14 +51,12 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
     },
     enabled: status === 'authenticated',
   });
-
   useEffect(() => {
     if (wishlistData?.items) {
       const inList = wishlistData.items.some((item: any) => item.productId === productId);
       setIsInWishlist(inList);
     }
   }, [wishlistData, productId]);
-
   const addMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/wishlist', {
@@ -82,7 +77,6 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
       toast({ title: 'Error', description: 'Failed to add to wishlist', variant: 'destructive' });
     },
   });
-
   const removeMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/wishlist?productId=${productId}`, { method: 'DELETE', credentials: 'include' });
@@ -98,6 +92,10 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
       toast({ title: 'Error', description: 'Failed to remove from wishlist', variant: 'destructive' });
     },
   });
+
+  // SÓ DEPOIS DOS HOOKS: returns condicionais
+  if (loadingSettings) return null;
+  if (!publicSettings?.enableWishlist) return null;
 
   const handleClick = () => {
     if (wishlistDisabled) {
@@ -154,49 +152,9 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
     <button
       onClick={handleClick}
       disabled={isDisabled}
-      className={`${
-        sizeClasses[size]
-      } flex items-center justify-center rounded-full transition-all ${
-        isInWishlist
-          ? 'bg-red-500 text-white hover:bg-red-600'
-          : 'bg-white border-2 border-gray-300 text-gray-600 hover:border-red-500 hover:text-red-500'
-      } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-    >
-      <Heart
-        className={`${iconSizes[size]} ${isInWishlist ? 'fill-current' : ''}`}
-      />
-    </button>
-  );
-
-  if (showText) {
-    return (
-      <button
-        onClick={handleClick}
-        disabled={isDisabled}
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-          isInWishlist
-            ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-            : 'border-gray-300 hover:border-red-500 hover:bg-red-50 hover:text-red-600'
-        } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        <Heart
-          className={`${iconSizes[size]} ${isInWishlist ? 'fill-red-500' : ''}`}
-        />
-        <span className="font-medium">
-          {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-        </span>
-      </button>
-    );
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={isDisabled}
-      className={`${
-        sizeClasses[size]
-      } flex items-center justify-center rounded-full transition-all ${
+      className={`$
+        {sizeClasses[size]}
+      flex items-center justify-center rounded-full transition-all ${
         isInWishlist
           ? 'bg-red-500 text-white hover:bg-red-600'
           : 'bg-white border-2 border-gray-300 text-gray-600 hover:border-red-500 hover:text-red-500'

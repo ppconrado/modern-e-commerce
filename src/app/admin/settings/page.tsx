@@ -97,7 +97,6 @@ export default function SettingsPage() {
         disableWishlist: !uiSettings.enableWishlist,
       };
       // Remover enableReviews/enableWishlist do payload
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { enableReviews, enableWishlist, ...payload } = settings as any;
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
