@@ -27,10 +27,10 @@ interface StoreSettings {
   disableMaintenanceMode: boolean;
 }
 
-interface UISettings extends Omit<StoreSettings, 'disableReviews' | 'disableWishlist'> {
+interface UISettings extends Omit<StoreSettings, 'disableReviews' | 'disableWishlist' | 'disableMaintenanceMode'> {
   enableReviews: boolean;
   enableWishlist: boolean;
-  disableMaintenanceMode: boolean;
+  enableMaintenanceMode: boolean;
 }
 
 export default function SettingsPage() {
@@ -50,7 +50,7 @@ export default function SettingsPage() {
     lowStockThreshold: 10,
     enableReviews: true,
     enableWishlist: true,
-    disableMaintenanceMode: false,
+    enableMaintenanceMode: false,
   });
 
   useEffect(() => {
@@ -85,6 +85,7 @@ export default function SettingsPage() {
         ...data.settings,
         enableReviews: !data.settings.disableReviews,
         enableWishlist: !data.settings.disableWishlist,
+        enableMaintenanceMode: !data.settings.disableMaintenanceMode,
       });
     }
   }, [data]);
@@ -96,9 +97,10 @@ export default function SettingsPage() {
         ...uiSettings,
         disableReviews: !uiSettings.enableReviews,
         disableWishlist: !uiSettings.enableWishlist,
+        disableMaintenanceMode: !uiSettings.enableMaintenanceMode,
       };
-      // Remover enableReviews/enableWishlist do payload
-      const { enableReviews, enableWishlist, ...payload } = settings as any;
+      // Remover enableReviews/enableWishlist/enableMaintenanceMode do payload
+      const { enableReviews, enableWishlist, enableMaintenanceMode, ...payload } = settings as any;
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -328,7 +330,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="disableMaintenanceMode" className="text-orange-600">
+                <Label htmlFor="enableMaintenanceMode" className="text-orange-600">
                   Maintenance Mode
                 </Label>
                 <p className="text-sm text-gray-600">
@@ -336,10 +338,10 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Switch
-                id="disableMaintenanceMode"
-                checked={formData.disableMaintenanceMode}
+                id="enableMaintenanceMode"
+                checked={formData.enableMaintenanceMode}
                 onCheckedChange={(checked) =>
-                  handleChange('disableMaintenanceMode', checked)
+                  handleChange('enableMaintenanceMode', checked)
                 }
               />
             </div>
