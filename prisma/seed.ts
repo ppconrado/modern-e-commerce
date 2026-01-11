@@ -219,6 +219,25 @@ async function main() {
   });
   console.log(`Created coupon: ${coupon5.code}`);
 
+  // Create default store settings
+  const storeSettings = await prisma.storeSettings.create({
+    data: {
+      storeName: 'E-Commerce Store',
+      storeEmail: 'contact@store.com',
+      storePhone: '',
+      storeAddress: '',
+      currency: 'USD',
+      taxRate: 0,
+      shippingFee: 10,
+      freeShippingThreshold: 100,
+      lowStockThreshold: 10,
+      disableReviews: false,
+      disableWishlist: false,
+      disableMaintenanceMode: false,
+    },
+  });
+  console.log('Created default store settings');
+
   console.log('Seeding finished.');
 }
 
