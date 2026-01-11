@@ -30,6 +30,7 @@ interface StoreSettings {
 interface UISettings extends Omit<StoreSettings, 'disableReviews' | 'disableWishlist'> {
   enableReviews: boolean;
   enableWishlist: boolean;
+  disableMaintenanceMode: boolean;
 }
 
 export default function SettingsPage() {

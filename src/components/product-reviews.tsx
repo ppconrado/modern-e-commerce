@@ -35,10 +35,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       const res = await fetch('/api/public-settings');
       if (!res.ok) return undefined;
       const data = await res.json();
-      return {
-        ...data,
-        enableReviews: data.disableReviews === undefined ? true : !data.disableReviews,
-      };
+      return data;
     },
   });
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -50,7 +47,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [comment, setComment] = useState('');
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
-  const reviewsDisabled = publicSettings ? !publicSettings.enableReviews : false;
+  const reviewsDisabled = publicSettings ? publicSettings.disableReviews : false;
 
   const fetchReviews = useCallback(async () => {
     try {

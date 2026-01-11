@@ -22,13 +22,10 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
     queryFn: async () => {
       const res = await fetch('/api/public-settings');
       if (!res.ok) {
-        return { enableWishlist: true };
+        return { disableWishlist: false };
       }
       const data = await res.json();
-      return {
-        ...data,
-        enableWishlist: data.disableWishlist === undefined ? true : !data.disableWishlist,
-      };
+      return data;
     },
     staleTime: 60000,
   });
@@ -95,7 +92,7 @@ export default function WishlistButton({ productId, size = 'md', showText = fals
 
   // SÓ DEPOIS DOS HOOKS: returns condicionais
   if (loadingSettings) return null;
-  if (!publicSettings?.enableWishlist) return null;
+  if (publicSettings?.disableWishlist) return null;
 
   const handleClick = () => {
     if (wishlistDisabled) {
