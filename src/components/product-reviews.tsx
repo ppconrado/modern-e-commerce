@@ -8,6 +8,7 @@ import { StarRating } from '@/components/star-rating';
 import { Star, Edit, Trash2, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 
 interface Review {
   id: string;
@@ -28,6 +29,18 @@ interface ProductReviewsProps {
 
 export function ProductReviews({ productId }: ProductReviewsProps) {
   const { data: session } = useSession();
+  const { data: publicSettings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/public-settings');
+      if (!res.ok) return undefined;
+      const data = await res.json();
+      return {
+        ...data,
+        enableReviews: data.disableReviews === undefined ? true : !data.disableReviews,
+      };
+    },
+  });
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +50,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [comment, setComment] = useState('');
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(false);
+  const reviewsDisabled = publicSettings ? !publicSettings.enableReviews : false;
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -46,6 +60,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       setReviews(data.reviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      // Check if error is because reviews are disabled
+      // (nenhuma ação, apenas log)
     } finally {
       setLoading(false);
     }
@@ -167,7 +183,12 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   };
 
   const userReview = reviews.find((r) => r.userId === session?.user?.id);
-  const canReview = session && !userReview && !showForm && hasPurchased;
+  const canReview = session && !userReview && !showForm && hasPurchased && !reviewsDisabled;
+
+  // Não renderizar nada enquanto publicSettings não foi carregado
+  if (loadingSettings || !publicSettings) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -202,8 +223,19 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Reviews Disabled Message */}
+        {reviewsDisabled && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="pt-6">
+              <p className="text-sm text-yellow-800">
+                Reviews are currently disabled on this store.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Review Form */}
-        {showForm && session && (
+        {!reviewsDisabled && showForm && session && (
           <form
             onSubmit={handleSubmit}
             className="border rounded-lg p-4 bg-gray-50"
@@ -261,7 +293,9 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         )}
 
         {/* Reviews List */}
-        {reviews.length === 0 ? (
+        {!reviewsDisabled && (
+          <>
+            {reviews.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Star className="h-12 w-12 mx-auto mb-3 text-gray-300" />
             <p>No reviews yet</p>
@@ -315,6 +349,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               </div>
             ))}
           </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

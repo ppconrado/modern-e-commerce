@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { isWishlistEnabled } from '@/lib/settings-helpers';
 
 // GET /api/wishlist - Get user's wishlist
 export async function GET(req: NextRequest) {
   try {
+    // Check if wishlist is enabled
+    const wishlistEnabled = await isWishlistEnabled();
+    if (!wishlistEnabled) {
+      return NextResponse.json(
+        { error: 'Wishlist is currently disabled' },
+        { status: 403 }
+      );
+    }
+
     const session = await auth();
 
     if (!session) {
@@ -43,14 +53,27 @@ export async function GET(req: NextRequest) {
 // POST /api/wishlist - Add item to wishlist
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    // Check if wishlist is enabled
+    const wishlistEnabled = await isWishlistEnabled();
+    if (!wishlistEnabled) {
+      return NextResponse.json(
+        { error: 'Wishlist is currently disabled' },
+        { status: 403 }
+      );
+    }
 
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Você precisa estar logado para usar a wishlist.' }, { status: 401 });
+    }
+
+    // Confirma se o usuário existe no banco
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user) {
+      return NextResponse.json({ error: 'Usuário não encontrado. Faça logout e login novamente.' }, { status: 401 });
     }
 
     const { productId } = await req.json();
-
     if (!productId) {
       return NextResponse.json(
         { error: 'Product ID is required' },
@@ -62,7 +85,6 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.findUnique({
       where: { id: productId },
     });
-
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -101,6 +123,15 @@ export async function POST(req: NextRequest) {
 // DELETE /api/wishlist - Remove item from wishlist
 export async function DELETE(req: NextRequest) {
   try {
+    // Check if wishlist is enabled
+    const wishlistEnabled = await isWishlistEnabled();
+    if (!wishlistEnabled) {
+      return NextResponse.json(
+        { error: 'Wishlist is currently disabled' },
+        { status: 403 }
+      );
+    }
+
     const session = await auth();
 
     if (!session) {

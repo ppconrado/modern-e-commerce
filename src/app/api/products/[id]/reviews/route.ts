@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { areReviewsEnabled } from '@/lib/settings-helpers';
 import { z } from 'zod';
 
 const reviewSchema = z.object({
@@ -46,6 +47,15 @@ export async function POST(
 ) {
   console.log('=== REVIEW POST ENDPOINT CALLED ===');
   try {
+    // Check if reviews are enabled
+    const reviewsEnabled = await areReviewsEnabled();
+    if (!reviewsEnabled) {
+      return NextResponse.json(
+        { error: 'Reviews are currently disabled' },
+        { status: 403 }
+      );
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
