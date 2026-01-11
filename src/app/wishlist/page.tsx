@@ -38,11 +38,16 @@ export default function WishlistPage() {
     }
   }, [status, router]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
       const res = await fetch('/api/wishlist');
-      if (!res.ok) throw new Error('Failed to fetch wishlist');
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('WISHLIST_DISABLED');
+        }
+        throw new Error('Failed to fetch wishlist');
+      }
       return res.json() as Promise<{ items: WishlistItem[] }>;
     },
     enabled: status === 'authenticated',
@@ -76,6 +81,27 @@ export default function WishlistPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // Check if wishlist is disabled
+  if (error && (error as Error).message === 'WISHLIST_DISABLED') {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold text-yellow-900 mb-2">
+              Wishlist Disabled
+            </h2>
+            <p className="text-yellow-800 mb-4">
+              Wishlist is currently disabled on this store.
+            </p>
+            <Link href="/">
+              <Button>Back to Shop</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }

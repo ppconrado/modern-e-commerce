@@ -24,7 +24,22 @@ export function Header() {
     await signOut({ callbackUrl: '/' });
   };
 
-  // Fetch wishlist count
+  // Consulta pública para saber se wishlist está desabilitada
+  const { data: publicSettings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/public-settings');
+      if (!res.ok) return { enableWishlist: true };
+      const data = await res.json();
+      return {
+        ...data,
+        enableWishlist: data.disableWishlist === undefined ? true : !data.disableWishlist,
+      };
+    },
+    staleTime: 60000,
+  });
+
+  // Fetch wishlist count (só se wishlist está habilitada)
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist'],
     queryFn: async () => {
@@ -32,7 +47,7 @@ export function Header() {
       if (!res.ok) return { items: [] };
       return res.json();
     },
-    enabled: !!session,
+    enabled: !!session && publicSettings?.enableWishlist,
   });
 
   const wishlistCount = wishlistData?.items?.length || 0;
@@ -114,7 +129,7 @@ export function Header() {
               </Link>
             </div>
           )}
-          {session && (
+          {session && publicSettings?.enableWishlist && (
             <Link href="/wishlist" className="relative">
               <Button variant="outline" size="icon">
                 <Heart className="h-5 w-5" />
@@ -141,7 +156,7 @@ export function Header() {
         {/* Mobile Icons + Hamburger */}
         <div className="flex md:hidden items-center gap-2">
           {/* Wishlist - Mobile */}
-          {session && (
+          {session && publicSettings?.enableWishlist && (
             <Link href="/wishlist" className="relative">
               <Button variant="ghost" size="icon">
                 <Heart className="h-5 w-5" />

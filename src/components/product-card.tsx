@@ -17,12 +17,27 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { StarRating } from './star-rating';
 import WishlistButton from './WishlistButton';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  // Consulta pública para saber se wishlist está desabilitada
+  const { data: publicSettings, isLoading: loadingSettings } = useQuery({
+    queryKey: ['public-settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/public-settings');
+      if (!res.ok) return { enableWishlist: true };
+      const data = await res.json();
+      return {
+        ...data,
+        enableWishlist: data.disableWishlist === undefined ? true : !data.disableWishlist,
+      };
+    },
+    staleTime: 60000,
+  });
   const { items, addToCart, updateItemQuantity, removeFromCart } =
     useCart();
   const cartItem = items.find((item) => item.product.id === product.id);
@@ -76,9 +91,11 @@ export function ProductCard({ product }: ProductCardProps) {
               fill
               className="object-cover"
             />
-            <div className="absolute top-2 right-2">
-              <WishlistButton productId={product.id} />
-            </div>
+            {(!loadingSettings && publicSettings?.enableWishlist) && (
+              <div className="absolute top-2 right-2">
+                <WishlistButton productId={product.id} />
+              </div>
+            )}
           </div>
         </CardHeader>
       </Link>
