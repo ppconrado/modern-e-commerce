@@ -22,9 +22,14 @@ interface StoreSettings {
   shippingFee: number;
   freeShippingThreshold: number;
   lowStockThreshold: number;
+  disableReviews: boolean;
+  disableWishlist: boolean;
+  disableMaintenanceMode: boolean;
+}
+
+interface UISettings extends Omit<StoreSettings, 'disableReviews' | 'disableWishlist'> {
   enableReviews: boolean;
   enableWishlist: boolean;
-  maintenanceMode: boolean;
 }
 
 export default function SettingsPage() {
@@ -32,7 +37,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<StoreSettings>({
+  const [formData, setFormData] = useState<UISettings>({
     storeName: '',
     storeEmail: '',
     storePhone: '',
@@ -44,7 +49,7 @@ export default function SettingsPage() {
     lowStockThreshold: 10,
     enableReviews: true,
     enableWishlist: true,
-    maintenanceMode: false,
+    disableMaintenanceMode: false,
   });
 
   useEffect(() => {
@@ -75,22 +80,37 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (data?.settings) {
-      setFormData(data.settings);
+      setFormData({
+        ...data.settings,
+        enableReviews: !data.settings.disableReviews,
+        enableWishlist: !data.settings.disableWishlist,
+      });
     }
   }, [data]);
 
   const updateMutation = useMutation({
-    mutationFn: async (settings: StoreSettings) => {
+    mutationFn: async (uiSettings: UISettings) => {
+      // Converter enable -> disable para o backend
+      const settings: StoreSettings = {
+        ...uiSettings,
+        disableReviews: !uiSettings.enableReviews,
+        disableWishlist: !uiSettings.enableWishlist,
+      };
+      // Remover enableReviews/enableWishlist do payload
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { enableReviews, enableWishlist, ...payload } = settings as any;
       const res = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to update settings');
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      queryClient.invalidateQueries({ queryKey: ['public-settings'] });
       toast({
         title: 'Success',
         description: 'Settings updated successfully',
@@ -110,9 +130,9 @@ export default function SettingsPage() {
     updateMutation.mutate(formData);
   };
 
-  const handleChange = (field: keyof StoreSettings, value: any) => {
+  const handleChange = (field: keyof UISettings, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }
 
   if (sessionStatus === 'loading' || isLoading) {
     return (
@@ -280,7 +300,7 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="enableReviews">Enable Product Reviews</Label>
                 <p className="text-sm text-gray-600">
-                  Allow customers to leave reviews on products
+                  Allow customers to review products
                 </p>
               </div>
               <Switch
@@ -308,7 +328,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="maintenanceMode" className="text-orange-600">
+                <Label htmlFor="disableMaintenanceMode" className="text-orange-600">
                   Maintenance Mode
                 </Label>
                 <p className="text-sm text-gray-600">
@@ -316,10 +336,10 @@ export default function SettingsPage() {
                 </p>
               </div>
               <Switch
-                id="maintenanceMode"
-                checked={formData.maintenanceMode}
+                id="disableMaintenanceMode"
+                checked={formData.disableMaintenanceMode}
                 onCheckedChange={(checked) =>
-                  handleChange('maintenanceMode', checked)
+                  handleChange('disableMaintenanceMode', checked)
                 }
               />
             </div>

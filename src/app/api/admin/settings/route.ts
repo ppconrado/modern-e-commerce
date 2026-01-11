@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { invalidateSettingsCache } from '@/lib/settings-helpers';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
@@ -13,9 +14,9 @@ const settingsSchema = z.object({
   shippingFee: z.number().min(0).default(0),
   freeShippingThreshold: z.number().min(0).default(0),
   lowStockThreshold: z.number().int().min(0).default(10),
-  enableReviews: z.boolean().default(true),
-  enableWishlist: z.boolean().default(true),
-  maintenanceMode: z.boolean().default(false),
+  disableReviews: z.boolean().default(false),
+  disableWishlist: z.boolean().default(false),
+  disableMaintenanceMode: z.boolean().default(false),
 });
 
 const defaultSettings = {
@@ -28,9 +29,9 @@ const defaultSettings = {
   shippingFee: 10,
   freeShippingThreshold: 100,
   lowStockThreshold: 10,
-  enableReviews: true,
-  enableWishlist: true,
-  maintenanceMode: false,
+  disableReviews: false,
+  disableWishlist: false,
+  disableMaintenanceMode: false,
 };
 
 // GET /api/admin/settings - Get store settings (admin only)
@@ -77,21 +78,31 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log('📦 PATCH /api/admin/settings - Body recebido:', JSON.stringify(body, null, 2));
+    
     const validatedData = settingsSchema.parse(body);
+    console.log('✅ Dados validados:', JSON.stringify(validatedData, null, 2));
 
     // Find existing settings or create default
     let settings = await prisma.storeSettings.findFirst();
+    console.log('🔍 Settings existentes:', settings ? 'Encontrado' : 'Não encontrado');
 
     if (!settings) {
       settings = await prisma.storeSettings.create({
         data: validatedData,
       });
+      console.log('✨ Settings criado:', JSON.stringify(settings, null, 2));
     } else {
       settings = await prisma.storeSettings.update({
         where: { id: settings.id },
         data: validatedData,
       });
+      console.log('🔄 Settings atualizado:', JSON.stringify(settings, null, 2));
     }
+
+    // Invalidate cache after update
+    invalidateSettingsCache();
+    console.log('🗑️ Cache invalidado');
 
     return NextResponse.json({
       message: 'Settings updated successfully',
@@ -102,6 +113,7 @@ export async function PATCH(req: NextRequest) {
       const errorMessage = error.errors
         .map((e) => `${e.path.join('.')}: ${e.message}`)
         .join(', ');
+      console.error('❌ Erro de validação Zod:', errorMessage);
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
     console.error('Failed to update settings:', error);
