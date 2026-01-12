@@ -16,7 +16,8 @@ export default function MaintenanceWrapper({ children }: { children: React.React
         const res = await fetch('/api/public-settings');
         if (res.ok) {
           const settings = await res.json();
-          setMaintenance(!!settings?.disableMaintenanceMode);
+          // maintenance = true quando disableMaintenanceMode === false (manutenção ativa)
+          setMaintenance(settings && settings.disableMaintenanceMode === false);
         }
       } catch {}
     }
