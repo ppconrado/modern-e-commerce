@@ -38,20 +38,8 @@ export default function SettingsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<UISettings>({
-    storeName: '',
-    storeEmail: '',
-    storePhone: '',
-    storeAddress: '',
-    currency: 'USD',
-    taxRate: 0,
-    shippingFee: 0,
-    freeShippingThreshold: 0,
-    lowStockThreshold: 10,
-    enableReviews: true,
-    enableWishlist: true,
-    enableMaintenanceMode: false,
-  });
+  // Inicialize formData como undefined
+  const [formData, setFormData] = useState<UISettings | undefined>(undefined);
 
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
@@ -79,17 +67,6 @@ export default function SettingsPage() {
     enabled: sessionStatus === 'authenticated',
   });
 
-  useEffect(() => {
-    if (data?.settings) {
-      setFormData({
-        ...data.settings,
-        enableReviews: !data.settings.disableReviews,
-        enableWishlist: !data.settings.disableWishlist,
-        enableMaintenanceMode: !data.settings.disableMaintenanceMode,
-      });
-    }
-  }, [data]);
-
   const updateMutation = useMutation({
     mutationFn: async (uiSettings: UISettings) => {
       // Converter enable -> disable para o backend
@@ -109,7 +86,15 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error('Failed to update settings');
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (updatedSettings) => {
+      if (updatedSettings && updatedSettings.id) {
+        setFormData({
+          ...updatedSettings,
+          enableReviews: !updatedSettings.disableReviews,
+          enableWishlist: !updatedSettings.disableWishlist,
+          enableMaintenanceMode: !updatedSettings.disableMaintenanceMode,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
       queryClient.invalidateQueries({ queryKey: ['wishlist'] });
       queryClient.invalidateQueries({ queryKey: ['public-settings'] });
@@ -127,21 +112,38 @@ export default function SettingsPage() {
     },
   });
 
+  useEffect(() => {
+    if (data?.settings) {
+      setFormData({
+        ...data.settings,
+        enableReviews: !data.settings.disableReviews,
+        enableWishlist: !data.settings.disableWishlist,
+        enableMaintenanceMode: !data.settings.disableMaintenanceMode,
+      });
+    }
+  }, [data]);
+
+  const showLoader = sessionStatus === 'loading' || isLoading || !formData;
+
+  if (showLoader) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate(formData);
   };
 
   const handleChange = (field: keyof UISettings, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
-
-  if (sessionStatus === 'loading' || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    if (!formData) return;
+    setFormData({
+      ...formData,
+      [field]: value as UISettings[typeof field],
+    });
   }
 
   return (
